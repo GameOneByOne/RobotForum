@@ -1,3 +1,4 @@
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 const forumSections = [
@@ -19,10 +20,10 @@ const forumSections = [
 ];
 
 export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const isSupabaseConfigured = hasSupabaseEnv();
+  const user = isSupabaseConfigured
+    ? (await (await createClient()).auth.getUser()).data.user
+    : null;
 
   return (
     <main className="min-h-screen bg-[#f7f8fa] text-[#18191f]">
@@ -45,7 +46,7 @@ export default async function Home() {
           <div className="rounded-lg border border-[#d9dde5] bg-white p-5">
             <h2 className="text-xl font-semibold">版块</h2>
             <p className="mt-2 text-sm leading-6 text-[#5b6472]">
-              Supabase 客户端已经在服务端初始化。配置环境变量后，这里就可以读取真实用户、帖子和版块数据。
+              Supabase 客户端已经接入。配置 Vercel 环境变量后，这里就可以读取真实用户、帖子和版块数据。
             </p>
           </div>
 
@@ -81,6 +82,12 @@ export default async function Home() {
             <div className="flex items-center justify-between gap-4">
               <dt className="text-[#5b6472]">后端</dt>
               <dd className="font-medium">Supabase</dd>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-[#5b6472]">环境变量</dt>
+              <dd className="font-medium">
+                {isSupabaseConfigured ? "已配置" : "待配置"}
+              </dd>
             </div>
           </dl>
         </aside>
