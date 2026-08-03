@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Robot Forum",
-  description: "A community forum for robotics builders and developers.",
+  title: "Robot Developer Platform",
+  description: "机器人开发者技术协作平台。",
 };
 
 export default function RootLayout({
