@@ -47,9 +47,9 @@ export type ResourceItem = {
 };
 
 export const globalNavigation = [
-  { label: "Home", href: "/" },
-  { label: "Projects", href: "/projects" },
-  { label: "Knowledge", href: "/knowledge" },
-  { label: "Discuss", href: "/discuss" },
-  { label: "Resources", href: "/resources" },
+  { label: "首页", href: "/" },
+  { label: "项目", href: "/projects" },
+  { label: "知识库", href: "/knowledge" },
+  { label: "讨论", href: "/discuss" },
+  { label: "资源", href: "/resources" },
 ];

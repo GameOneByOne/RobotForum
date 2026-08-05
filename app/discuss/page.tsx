@@ -52,7 +52,7 @@ export default async function DiscussPage({ searchParams }: DiscussPageProps) {
                   href={href}
                   className={`block rounded-md px-3 py-2 text-sm font-medium ${
                     isActive
-                      ? "bg-[#e7f2f1] text-[#1f6867]"
+                      ? "bg-[#24706f] text-white"
                       : "text-[#3f4754] hover:bg-[#f0f3f6]"
                   }`}
                 >
@@ -92,7 +92,7 @@ export default async function DiscussPage({ searchParams }: DiscussPageProps) {
           <section className="rounded-lg border border-[#d8dee6] bg-white p-4">
             <h2 className="text-base font-semibold">数据读取状态</h2>
             <p className="mt-3 text-sm leading-6 text-[#5b6472]">
-              当前页面只读取 Supabase `forum_posts` 表，不再使用前端假数据。
+              当前页面只读取 Supabase forum_posts 表，不再使用前端假数据。
             </p>
           </section>
 

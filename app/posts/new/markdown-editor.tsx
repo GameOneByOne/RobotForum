@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 
 import { MarkdownContent } from "@/components/markdown-content";
@@ -9,8 +9,6 @@ type MarkdownEditorProps = {
   name: string;
   initialValue?: string;
 };
-
-type EditorMode = "edit" | "preview";
 
 type ToolbarAction = {
   label: string;
@@ -98,7 +96,7 @@ export function MarkdownEditor({
   initialValue = defaultMarkdown,
 }: MarkdownEditorProps) {
   const [markdown, setMarkdown] = useState(initialValue);
-  const [mode, setMode] = useState<EditorMode>("edit");
+  const [isSplitPreview, setIsSplitPreview] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const wordCount = useMemo(
@@ -106,25 +104,61 @@ export function MarkdownEditor({
     [markdown],
   );
 
-  function focusCurrentMode(nextMode: EditorMode) {
+  function syncPreviewScroll() {
+    const textarea = textareaRef.current;
+    const preview = previewRef.current;
+
+    if (!textarea || !preview) {
+      return;
+    }
+
+    const editorRange = textarea.scrollHeight - textarea.clientHeight;
+    const previewRange = preview.scrollHeight - preview.clientHeight;
+
+    if (editorRange <= 0 || previewRange <= 0) {
+      preview.scrollTop = 0;
+      return;
+    }
+
+    preview.scrollTop = (textarea.scrollTop / editorRange) * previewRange;
+  }
+
+  function restoreTextareaState(
+    scrollTop: number,
+    scrollLeft: number,
+    selectionStart: number,
+    selectionEnd: number,
+  ) {
     window.requestAnimationFrame(() => {
-      if (nextMode === "edit") {
-        textareaRef.current?.focus();
+      const textarea = textareaRef.current;
+
+      if (!textarea) {
         return;
       }
 
-      previewRef.current?.focus();
+      textarea.focus({ preventScroll: true });
+      textarea.scrollTop = scrollTop;
+      textarea.scrollLeft = scrollLeft;
+      textarea.setSelectionRange(selectionStart, selectionEnd);
+      syncPreviewScroll();
     });
   }
 
-  function switchMode(nextMode: EditorMode) {
-    setMode(nextMode);
-    focusCurrentMode(nextMode);
-  }
+  function toggleSplitPreview() {
+    const textarea = textareaRef.current;
 
-  function toggleMode() {
-    const nextMode = mode === "edit" ? "preview" : "edit";
-    switchMode(nextMode);
+    if (!textarea) {
+      setIsSplitPreview((current) => !current);
+      return;
+    }
+
+    const scrollTop = textarea.scrollTop;
+    const scrollLeft = textarea.scrollLeft;
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+
+    setIsSplitPreview((current) => !current);
+    restoreTextareaState(scrollTop, scrollLeft, selectionStart, selectionEnd);
   }
 
   function insertMarkdown(action: ToolbarAction) {
@@ -143,15 +177,22 @@ export function MarkdownEditor({
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
+    const scrollTop = textarea.scrollTop;
+    const scrollLeft = textarea.scrollLeft;
     const nextMarkdown =
       markdown.slice(0, start) + nextText + markdown.slice(end);
     const nextCursor = start + action.before.length + content.length;
 
     setMarkdown(nextMarkdown);
-    window.requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(nextCursor, nextCursor);
-    });
+    restoreTextareaState(scrollTop, scrollLeft, nextCursor, nextCursor);
+  }
+
+  function handleToolbarMouseDown(
+    event: MouseEvent<HTMLButtonElement>,
+    action: ToolbarAction,
+  ) {
+    event.preventDefault();
+    insertMarkdown(action);
   }
 
   function handleEditorKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -160,7 +201,7 @@ export function MarkdownEditor({
     }
 
     event.preventDefault();
-    toggleMode();
+    toggleSplitPreview();
   }
 
   return (
@@ -174,81 +215,68 @@ export function MarkdownEditor({
             Markdown 正文
           </label>
           <p className="mt-1 text-xs text-[#667085]">
-            光标在编辑器内时，按 Tab 在编辑和预览之间切换
+            按 Tab 打开或关闭右侧预览，编辑区会保持当前滚动位置。
           </p>
         </div>
 
-        <div className="flex rounded-md border border-[#cfd6df] bg-[#f8fafb] p-1">
-          <button
-            type="button"
-            onClick={() => switchMode("edit")}
-            className={`rounded px-3 py-1.5 text-xs font-semibold ${
-              mode === "edit"
-                ? "bg-white text-[#24706f] shadow-sm"
-                : "text-[#667085]"
-            }`}
-          >
-            编辑
-          </button>
-          <button
-            type="button"
-            onClick={() => switchMode("preview")}
-            className={`rounded px-3 py-1.5 text-xs font-semibold ${
-              mode === "preview"
-                ? "bg-white text-[#24706f] shadow-sm"
-                : "text-[#667085]"
-            }`}
-          >
-            预览
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={toggleSplitPreview}
+          className="rounded-md bg-[#24706f] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1f6867]"
+        >
+          {isSplitPreview ? "关闭预览" : "分屏预览"}
+        </button>
       </div>
 
-      {mode === "edit" ? (
-        <>
-          <div className="flex flex-wrap gap-2 border-b border-[#edf0f3] bg-[#fbfcfd] px-4 py-3">
-            {toolbarActions.map((action) => (
-              <button
-                key={action.title}
-                type="button"
-                title={action.title}
-                onClick={() => insertMarkdown(action)}
-                className="min-h-8 rounded-md border border-[#cfd6df] bg-white px-2.5 text-xs font-semibold text-[#3f4754] hover:border-[#24706f] hover:text-[#24706f]"
-              >
-                {action.label}
-              </button>
-            ))}
-          </div>
+      <div className="flex flex-wrap gap-2 border-b border-[#edf0f3] bg-[#fbfcfd] px-4 py-3">
+        {toolbarActions.map((action) => (
+          <button
+            key={action.title}
+            type="button"
+            title={action.title}
+            onMouseDown={(event) => handleToolbarMouseDown(event, action)}
+            className="min-h-8 rounded-md border border-[#cfd6df] bg-white px-2.5 text-xs font-semibold text-[#3f4754] hover:border-[#24706f] hover:text-[#24706f]"
+          >
+            {action.label}
+          </button>
+        ))}
+      </div>
 
-          <div className="p-4">
-            <textarea
-              ref={textareaRef}
-              id={name}
-              name={name}
-              value={markdown}
-              onChange={(event) => setMarkdown(event.target.value)}
-              className="min-h-[620px] w-full resize-y rounded-md border border-[#cfd6df] bg-[#fbfcfd] px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
-              required
-            />
-            <div className="mt-2 flex justify-end text-xs text-[#667085]">
-              <span>{wordCount} words</span>
-            </div>
+      <div
+        className={`grid gap-4 p-4 ${
+          isSplitPreview ? "lg:grid-cols-2" : "grid-cols-1"
+        }`}
+      >
+        <div>
+          <textarea
+            ref={textareaRef}
+            id={name}
+            name={name}
+            value={markdown}
+            onChange={(event) => {
+              setMarkdown(event.target.value);
+              window.requestAnimationFrame(syncPreviewScroll);
+            }}
+            onScroll={syncPreviewScroll}
+            className="h-[620px] w-full resize-y rounded-md border border-[#cfd6df] bg-[#fbfcfd] px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+            required
+          />
+          <div className="mt-2 flex justify-end text-xs text-[#667085]">
+            <span>{wordCount} words</span>
           </div>
-        </>
-      ) : (
-        <div className="p-4">
-          <input type="hidden" name={name} value={markdown} />
+        </div>
+
+        {isSplitPreview && (
           <div
             ref={previewRef}
-            tabIndex={0}
-            className="min-h-[620px] rounded-md border border-[#edf0f3] bg-white p-4 outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+            className="h-[620px] overflow-y-auto rounded-md border border-[#edf0f3] bg-white p-4"
           >
             <div className="space-y-5 text-sm leading-7 text-[#3f4754]">
               <MarkdownContent source={markdown} />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

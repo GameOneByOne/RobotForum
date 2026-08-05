@@ -185,6 +185,48 @@ export async function getKnowledgeItems(): Promise<KnowledgeItem[]> {
   }
 }
 
+export async function getKnowledgeItemBySlug(
+  slug: string,
+): Promise<KnowledgeItem | undefined> {
+  if (!hasSupabaseEnv()) {
+    return undefined;
+  }
+
+  const slugCandidates = Array.from(
+    new Set([
+      slug,
+      (() => {
+        try {
+          return decodeURIComponent(slug);
+        } catch {
+          return slug;
+        }
+      })(),
+    ]),
+  );
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("knowledge")
+      .select(
+        "slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+      )
+      .in("slug", slugCandidates)
+      .eq("status", "published")
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      return undefined;
+    }
+
+    return mapKnowledge(data as KnowledgeRow);
+  } catch {
+    return undefined;
+  }
+}
+
 export async function getResources(): Promise<ResourceItem[]> {
   if (!hasSupabaseEnv()) {
     return [];

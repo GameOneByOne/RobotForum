@@ -29,7 +29,7 @@ export function SiteHeader() {
           href="/search"
           className="rounded-md border border-[#cfd6df] px-3 py-2 text-sm font-medium text-[#3f4754] hover:bg-[#f0f3f6]"
         >
-          Search
+          搜索
         </Link>
       </div>
     </header>
