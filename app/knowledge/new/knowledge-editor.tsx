@@ -4,12 +4,15 @@ import type { KeyboardEvent, MouseEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 
 import { MarkdownContent } from "@/components/markdown-content";
+import { getTagColorClass } from "@/lib/tag-colors";
 import type { KnowledgeSection } from "@/lib/knowledge/sections";
 
 type EditableKnowledgeSection = Omit<KnowledgeSection, "level">;
 
 type KnowledgeEditorProps = {
   initialTitle?: string;
+  initialSummary?: string;
+  initialTags?: string[];
   initialSections?: KnowledgeSection[];
 };
 
@@ -179,11 +182,20 @@ function toEditableSections(
   }));
 }
 
+function normalizeTag(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
 export function KnowledgeEditor({
   initialTitle = "未命名知识库",
+  initialSummary = "",
+  initialTags = [],
   initialSections,
 }: KnowledgeEditorProps) {
   const [knowledgeTitle, setKnowledgeTitle] = useState(initialTitle);
+  const [summary, setSummary] = useState(initialSummary);
+  const [tags, setTags] = useState<string[]>(initialTags);
+  const [tagInput, setTagInput] = useState("");
   const [sections, setSections] = useState<EditableKnowledgeSection[]>(
     toEditableSections(initialSections),
   );
@@ -209,6 +221,22 @@ export function KnowledgeEditor({
         .filter(Boolean).length,
     [activeSection.content],
   );
+
+  function addTag(value = tagInput) {
+    const nextTag = normalizeTag(value);
+
+    if (!nextTag || tags.includes(nextTag)) {
+      setTagInput("");
+      return;
+    }
+
+    setTags((current) => [...current, nextTag]);
+    setTagInput("");
+  }
+
+  function removeTag(tag: string) {
+    setTags((current) => current.filter((item) => item !== tag));
+  }
 
   function updateActiveSection(patch: Partial<EditableKnowledgeSection>) {
     setSections((current) =>
@@ -411,164 +439,214 @@ export function KnowledgeEditor({
   }
 
   return (
-    <div
-      className="grid min-h-[720px] overflow-hidden rounded-lg border border-[#d8dee6] bg-white lg:grid-cols-[260px_1fr]"
-      onKeyDown={handleEditorKeyDown}
-      onClick={() => setContextMenu(null)}
-    >
+    <div className="space-y-5">
       <input type="hidden" name="content" value={combinedMarkdown} />
       <input type="hidden" name="sections" value={JSON.stringify(sections)} />
+      <input type="hidden" name="tags" value={JSON.stringify(tags)} />
 
-      <aside
-        className="border-b border-[#d8dee6] bg-[#fbfcfd] lg:border-b-0 lg:border-r"
-        onContextMenu={handleBlankContextMenu}
-      >
-        <div className="border-b border-[#d8dee6] p-4">
-          <p className="text-sm font-semibold text-[#171a20]">章节导航</p>
-          <p className="mt-1 text-xs leading-5 text-[#667085]">
-            右键空白处新建章节，右键章节创建子章节。
-          </p>
-        </div>
+      <section className="space-y-4 rounded-lg border border-[#d8dee6] bg-white p-5">
+        <label className="block space-y-2">
+          <span className="text-sm font-semibold">知识库名称</span>
+          <input
+            name="title"
+            value={knowledgeTitle}
+            onChange={(event) => setKnowledgeTitle(event.target.value)}
+            className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+            required
+          />
+        </label>
 
-        <div className="h-[640px] space-y-1 overflow-y-auto p-3">
-          {renderSectionTree(null)}
-        </div>
-      </aside>
+        <label className="block space-y-2">
+          <span className="text-sm font-semibold">知识库简介</span>
+          <textarea
+            name="summary"
+            value={summary}
+            onChange={(event) => setSummary(event.target.value)}
+            className="min-h-24 w-full resize-y rounded-md border border-[#cfd6df] px-3 py-2 text-sm leading-6 outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+            placeholder="用一两句话说明这篇知识库适合解决什么问题。"
+          />
+        </label>
 
-      <section className="min-w-0">
-        <div className="grid gap-4 border-b border-[#d8dee6] p-4 md:grid-cols-[1fr_260px]">
-          <label className="space-y-2">
-            <span className="text-sm font-semibold">知识库名称</span>
+        <div className="space-y-2">
+          <span className="text-sm font-semibold">知识库标签</span>
+          <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-md border border-[#cfd6df] bg-white px-3 py-2 focus-within:border-[#24706f] focus-within:ring-2 focus-within:ring-[#b7cfcd]">
+            {tags.map((tag, index) => {
+              const colorClass = getTagColorClass(index);
+
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  title="点击删除标签"
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition brightness-100 hover:brightness-90 ${colorClass}`}
+                >
+                  {tag}
+                </button>
+              );
+            })}
             <input
-              name="title"
-              value={knowledgeTitle}
-              onChange={(event) => setKnowledgeTitle(event.target.value)}
-              className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
-              required
-            />
-          </label>
-
-          <label className="space-y-2">
-            <span className="text-sm font-semibold">当前章节名称</span>
-            <input
-              value={activeSection.title}
-              onChange={(event) =>
-                updateActiveSection({ title: event.target.value })
-              }
-              className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
-              required
-            />
-          </label>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d8dee6] px-4 py-3">
-          <div>
-            <p className="text-sm font-semibold">Markdown 正文</p>
-            <p className="mt-1 text-xs text-[#667085]">
-              每个章节拥有独立 Markdown 文档，按 Tab 切换右侧预览。
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={toggleSplitPreview}
-            className="rounded-md bg-[#24706f] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1f6867]"
-          >
-            {isSplitPreview ? "关闭预览" : "分屏预览"}
-          </button>
-        </div>
-
-        <div className="flex flex-wrap gap-2 border-b border-[#edf0f3] bg-[#fbfcfd] px-4 py-3">
-          {toolbarActions.map((action) => (
-            <button
-              key={action.title}
-              type="button"
-              title={action.title}
-              onMouseDown={(event) => {
-                event.preventDefault();
-                insertMarkdown(action);
+              value={tagInput}
+              onChange={(event) => setTagInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === ",") {
+                  event.preventDefault();
+                  addTag();
+                }
               }}
-              className="min-h-8 rounded-md border border-[#cfd6df] bg-white px-2.5 text-xs font-semibold text-[#3f4754] hover:border-[#24706f] hover:text-[#24706f]"
-            >
-              {action.label}
-            </button>
-          ))}
-        </div>
-
-        <div
-          className={`grid gap-4 p-4 ${
-            isSplitPreview ? "xl:grid-cols-2" : "grid-cols-1"
-          }`}
-        >
-          <div>
-            <textarea
-              ref={textareaRef}
-              value={activeSection.content}
-              onChange={(event) => {
-                updateActiveSection({ content: event.target.value });
-                window.requestAnimationFrame(syncPreviewScroll);
-              }}
-              onScroll={syncPreviewScroll}
-              className="h-[560px] w-full resize-y rounded-md border border-[#cfd6df] bg-[#fbfcfd] px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
-              required
+              onBlur={() => addTag()}
+              className="min-w-32 flex-1 border-0 bg-transparent text-sm outline-none"
+              placeholder="输入标签后按 Enter"
             />
-            <div className="mt-2 flex justify-between text-xs text-[#667085]">
-              <span>{sections.length} 个章节</span>
-              <span>{wordCount} words</span>
-            </div>
           </div>
-
-          {isSplitPreview && (
-            <div
-              ref={previewRef}
-              className="h-[560px] overflow-y-auto rounded-md border border-[#edf0f3] bg-white p-4"
-            >
-              <div className="space-y-5 text-sm leading-7 text-[#3f4754]">
-                <MarkdownContent source={activeSection.content} />
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
-      {contextMenu && (
-        <div
-          className="fixed z-50 w-44 overflow-hidden rounded-md border border-[#cfd6df] bg-white py-1 text-sm shadow-lg"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-          onClick={(event) => event.stopPropagation()}
+      <div
+        className="grid min-h-[720px] overflow-hidden rounded-lg border border-[#d8dee6] bg-white lg:grid-cols-[260px_1fr]"
+        onKeyDown={handleEditorKeyDown}
+        onClick={() => setContextMenu(null)}
+      >
+        <aside
+          className="border-b border-[#d8dee6] bg-[#fbfcfd] lg:border-b-0 lg:border-r"
+          onContextMenu={handleBlankContextMenu}
         >
-          {contextMenu.sectionId &&
-            (() => {
-              const sectionId = contextMenu.sectionId;
+          <div className="border-b border-[#d8dee6] p-4">
+            <p className="text-sm font-semibold text-[#171a20]">章节导航</p>
+            <p className="mt-1 text-xs leading-5 text-[#667085]">
+              右键空白处新建章节，右键章节创建子章节或删除章节。
+            </p>
+          </div>
 
-              return (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => addSection(sectionId)}
-                    className="block w-full px-3 py-2 text-left text-[#3f4754] hover:bg-[#f0f3f6]"
-                  >
-                    新建子章节
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteSection(sectionId)}
-                    className="block w-full px-3 py-2 text-left text-[#d92d20] hover:bg-[#fff4f2]"
-                  >
-                    删除章节
-                  </button>
-                </>
-              );
-            })()}
-          <button
-            type="button"
-            onClick={() => addSection(null)}
-            className="block w-full px-3 py-2 text-left text-[#3f4754] hover:bg-[#f0f3f6]"
+          <div className="h-[640px] space-y-1 overflow-y-auto p-3">
+            {renderSectionTree(null)}
+          </div>
+        </aside>
+
+        <section className="min-w-0">
+          <div className="border-b border-[#d8dee6] p-4">
+            <label className="block max-w-xl space-y-2">
+              <span className="text-sm font-semibold">当前章节名称</span>
+              <input
+                value={activeSection.title}
+                onChange={(event) =>
+                  updateActiveSection({ title: event.target.value })
+                }
+                className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+                required
+              />
+            </label>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d8dee6] px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold">Markdown 正文</p>
+              <p className="mt-1 text-xs text-[#667085]">
+                每个章节拥有独立 Markdown 文档，按 Tab 切换右侧预览。
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleSplitPreview}
+              className="rounded-md bg-[#24706f] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1f6867]"
+            >
+              {isSplitPreview ? "关闭预览" : "分屏预览"}
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2 border-b border-[#edf0f3] bg-[#fbfcfd] px-4 py-3">
+            {toolbarActions.map((action) => (
+              <button
+                key={action.title}
+                type="button"
+                title={action.title}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  insertMarkdown(action);
+                }}
+                className="min-h-8 rounded-md border border-[#cfd6df] bg-white px-2.5 text-xs font-semibold text-[#3f4754] hover:border-[#24706f] hover:text-[#24706f]"
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+
+          <div
+            className={`grid gap-4 p-4 ${
+              isSplitPreview ? "xl:grid-cols-2" : "grid-cols-1"
+            }`}
           >
-            新建章节
-          </button>
-        </div>
-      )}
+            <div>
+              <textarea
+                ref={textareaRef}
+                value={activeSection.content}
+                onChange={(event) => {
+                  updateActiveSection({ content: event.target.value });
+                  window.requestAnimationFrame(syncPreviewScroll);
+                }}
+                onScroll={syncPreviewScroll}
+                className="h-[560px] w-full resize-y rounded-md border border-[#cfd6df] bg-[#fbfcfd] px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+                required
+              />
+              <div className="mt-2 flex justify-between text-xs text-[#667085]">
+                <span>{sections.length} 个章节</span>
+                <span>{wordCount} words</span>
+              </div>
+            </div>
+
+            {isSplitPreview && (
+              <div
+                ref={previewRef}
+                className="h-[560px] overflow-y-auto rounded-md border border-[#edf0f3] bg-white p-4"
+              >
+                <div className="space-y-5 text-sm leading-7 text-[#3f4754]">
+                  <MarkdownContent source={activeSection.content} />
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {contextMenu && (
+          <div
+            className="fixed z-50 w-44 overflow-hidden rounded-md border border-[#cfd6df] bg-white py-1 text-sm shadow-lg"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            {contextMenu.sectionId &&
+              (() => {
+                const sectionId = contextMenu.sectionId;
+
+                return (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => addSection(sectionId)}
+                      className="block w-full px-3 py-2 text-left text-[#3f4754] hover:bg-[#f0f3f6]"
+                    >
+                      新建子章节
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteSection(sectionId)}
+                      className="block w-full px-3 py-2 text-left text-[#d92d20] hover:bg-[#fff4f2]"
+                    >
+                      删除章节
+                    </button>
+                  </>
+                );
+              })()}
+            <button
+              type="button"
+              onClick={() => addSection(null)}
+              className="block w-full px-3 py-2 text-left text-[#3f4754] hover:bg-[#f0f3f6]"
+            >
+              新建章节
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -34,7 +34,7 @@ export default async function EditKnowledgePage({
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
       <SiteHeader />
       <header className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto max-w-7xl px-5 py-6">
+        <div className="mx-auto w-[80vw] max-w-none px-5 py-6">
           <Link
             href={`/knowledge/${encodedSlug}`}
             className="text-sm font-medium text-[#24706f] hover:text-[#1f6867]"
@@ -57,7 +57,7 @@ export default async function EditKnowledgePage({
 
       <form
         action={updateKnowledge}
-        className="mx-auto max-w-7xl space-y-5 px-5 py-6"
+        className="mx-auto w-[80vw] max-w-none space-y-5 px-5 py-6"
       >
         <input type="hidden" name="slug" value={item.slug} />
 
@@ -67,7 +67,12 @@ export default async function EditKnowledgePage({
           </div>
         )}
 
-        <KnowledgeEditor initialTitle={item.title} initialSections={sections} />
+        <KnowledgeEditor
+          initialTitle={item.title}
+          initialSummary={item.summary}
+          initialTags={item.tags}
+          initialSections={sections}
+        />
 
         <div className="sticky bottom-0 flex justify-end border-t border-[#d8dee6] bg-[#f4f6f8]/95 py-4">
           <button

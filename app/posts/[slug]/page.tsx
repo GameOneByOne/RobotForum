@@ -38,7 +38,7 @@ export default async function PostPage({ params }: PostPageProps) {
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
       <SiteHeader />
       <header className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto max-w-4xl px-5 py-6">
+        <div className="mx-auto w-[80vw] max-w-none px-5 py-6">
           <div className="flex items-center justify-between gap-4">
             <Link
               href="/discuss"
@@ -69,7 +69,7 @@ export default async function PostPage({ params }: PostPageProps) {
         </div>
       </header>
 
-      <article className="mx-auto max-w-4xl px-5 py-6">
+      <article className="mx-auto w-[80vw] max-w-none px-5 py-6">
         <div className="rounded-lg border border-[#d8dee6] bg-white p-6">
           <div className="flex flex-wrap gap-2">
             {post.tags.map((tag) => (

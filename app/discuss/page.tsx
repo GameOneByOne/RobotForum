@@ -30,7 +30,7 @@ export default async function DiscussPage({ searchParams }: DiscussPageProps) {
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
       <SiteHeader />
 
-      <div className="mx-auto grid max-w-7xl gap-5 px-5 py-6 lg:grid-cols-[20%_1fr_320px]">
+      <div className="mx-auto grid w-[80vw] max-w-none gap-5 px-5 py-6 lg:grid-cols-[20%_1fr_320px]">
         <aside className="rounded-lg border border-[#d8dee6] bg-white p-4">
           <h2 className="text-sm font-semibold text-[#667085]">讨论分类</h2>
           <nav className="mt-3 space-y-1">

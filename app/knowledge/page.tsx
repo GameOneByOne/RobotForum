@@ -13,7 +13,7 @@ export default async function KnowledgePage() {
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
       <SiteHeader />
       <section className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-start justify-between gap-4 px-5 py-10">
+        <div className="mx-auto flex w-[80vw] max-w-none flex-wrap items-start justify-between gap-4 px-5 py-10">
           <div>
             <p className="text-sm font-semibold text-[#24706f]">Knowledge</p>
             <h1 className="mt-2 text-4xl font-bold">工程知识库</h1>
@@ -30,7 +30,7 @@ export default async function KnowledgePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl space-y-4 px-5 py-8">
+      <section className="mx-auto w-[80vw] max-w-none space-y-4 px-5 py-8">
         {knowledgeItems.map((item) => (
           <ContentCard
             key={item.slug}

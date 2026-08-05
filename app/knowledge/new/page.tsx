@@ -12,7 +12,7 @@ export default function NewKnowledgePage() {
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
       <SiteHeader />
       <header className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto max-w-7xl px-5 py-6">
+        <div className="mx-auto w-[80vw] max-w-none px-5 py-6">
           <Link
             href="/knowledge"
             className="text-sm font-medium text-[#24706f] hover:text-[#1f6867]"
@@ -35,7 +35,7 @@ export default function NewKnowledgePage() {
 
       <form
         action={publishKnowledge}
-        className="mx-auto max-w-7xl space-y-5 px-5 py-6"
+        className="mx-auto w-[80vw] max-w-none space-y-5 px-5 py-6"
       >
         {!isSupabaseConfigured && (
           <div className="rounded-lg border border-[#d8dee6] bg-white p-4 text-sm text-[#667085]">

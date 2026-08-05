@@ -13,7 +13,7 @@ export default async function ProjectsPage() {
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
       <SiteHeader />
       <section className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-start justify-between gap-4 px-5 py-10">
+        <div className="mx-auto flex w-[80vw] max-w-none flex-wrap items-start justify-between gap-4 px-5 py-10">
           <div>
             <p className="text-sm font-semibold text-[#24706f]">Projects</p>
             <h1 className="mt-2 text-4xl font-bold">项目展示</h1>
@@ -30,7 +30,7 @@ export default async function ProjectsPage() {
         </div>
       </section>
 
-      <div className="mx-auto grid max-w-7xl gap-4 px-5 py-8 md:grid-cols-3">
+      <div className="mx-auto grid w-[80vw] max-w-none gap-4 px-5 py-8 md:grid-cols-3">
         {projects.map((project) => (
           <ContentCard
             key={project.slug}
@@ -45,7 +45,7 @@ export default async function ProjectsPage() {
       </div>
 
       {!projects.length && (
-        <div className="mx-auto max-w-7xl px-5 pb-8">
+        <div className="mx-auto w-[80vw] max-w-none px-5 pb-8">
           <p className="rounded-lg border border-[#d8dee6] bg-white p-5 text-sm text-[#667085]">
             数据库中暂无项目数据。
           </p>

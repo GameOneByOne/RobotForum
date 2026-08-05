@@ -55,7 +55,7 @@ export default async function Home() {
       <SiteHeader />
 
       <section className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto max-w-7xl px-5 py-12">
+        <div className="mx-auto w-[80vw] max-w-none px-5 py-12">
           <p className="text-sm font-semibold uppercase text-[#24706f]">
             Robot Developer Platform
           </p>
@@ -68,7 +68,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl space-y-10 px-5 py-10">
+      <div className="mx-auto w-[80vw] max-w-none space-y-10 px-5 py-10">
         <section>
           <SectionHeader eyebrow="Projects" title="项目展示" href="/projects" />
           <div className="mt-4 grid gap-4 md:grid-cols-3">

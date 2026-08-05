@@ -41,7 +41,7 @@ export default async function KnowledgeDetailPage({
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
       <SiteHeader />
       <header className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto max-w-7xl px-5 py-6">
+        <div className="mx-auto w-[80vw] max-w-none px-5 py-6">
           <Link
             href="/knowledge"
             className="text-sm font-medium text-[#24706f] hover:text-[#1f6867]"

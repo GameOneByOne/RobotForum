@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { getTagColorClass } from "@/lib/tag-colors";
+
 type ContentCardProps = {
   title: string;
   description: string;
@@ -24,10 +26,10 @@ export function ContentCard({
       <p className="mt-3 text-sm leading-6 text-[#5b6472]">{description}</p>
       {tags.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
-          {tags.map((tag) => (
+          {tags.map((tag, index) => (
             <span
               key={tag}
-              className="rounded-md bg-[#f0f3f6] px-2.5 py-1 text-xs font-medium text-[#526071]"
+              className={`rounded-md px-2.5 py-1 text-xs font-semibold ${getTagColorClass(index)}`}
             >
               {tag}
             </span>
