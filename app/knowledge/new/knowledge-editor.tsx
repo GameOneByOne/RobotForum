@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent, MouseEvent } from "react";
+import type { ClipboardEvent, DragEvent, KeyboardEvent, MouseEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 
 import { MarkdownContent } from "@/components/markdown-content";
@@ -29,6 +29,17 @@ type ContextMenuState = {
   y: number;
   sectionId: string | null;
 } | null;
+
+type CloudinaryUploadResponse = {
+  secure_url?: string;
+  error?: {
+    message?: string;
+  };
+};
+
+const cloudinaryCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const cloudinaryUploadPreset =
+  process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 const firstSectionId = "section-root";
 
@@ -186,6 +197,14 @@ function normalizeTag(value: string) {
   return value.trim().replace(/\s+/g, " ");
 }
 
+function imageFilesFromList(files: FileList | File[]) {
+  return Array.from(files).filter((file) => file.type.startsWith("image/"));
+}
+
+function imageAltText(fileName: string) {
+  return fileName.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || "image";
+}
+
 export function KnowledgeEditor({
   initialTitle = "未命名知识库",
   initialSummary = "",
@@ -204,6 +223,9 @@ export function KnowledgeEditor({
   );
   const [isSplitPreview, setIsSplitPreview] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
+  const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState("");
+  const saveInPlaceButtonRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -293,6 +315,54 @@ export function KnowledgeEditor({
     setContextMenu(null);
   }
 
+  function moveSection(
+    draggedId: string,
+    targetId: string,
+    position: "before" | "after",
+  ) {
+    if (draggedId === targetId) {
+      return;
+    }
+
+    setSections((current) => {
+      const dragged = current.find((section) => section.id === draggedId);
+      const target = current.find((section) => section.id === targetId);
+
+      if (!dragged || !target || dragged.parentId !== target.parentId) {
+        return current;
+      }
+
+      const nextSections = current.filter((section) => section.id !== draggedId);
+      const targetIndex = nextSections.findIndex(
+        (section) => section.id === targetId,
+      );
+
+      if (targetIndex < 0) {
+        return current;
+      }
+
+      const insertionIndex =
+        position === "after" ? targetIndex + 1 : targetIndex;
+
+      return [
+        ...nextSections.slice(0, insertionIndex),
+        dragged,
+        ...nextSections.slice(insertionIndex),
+      ];
+    });
+  }
+
+  function canDropOnSection(targetId: string) {
+    if (!draggedSectionId || draggedSectionId === targetId) {
+      return false;
+    }
+
+    const dragged = sections.find((section) => section.id === draggedSectionId);
+    const target = sections.find((section) => section.id === targetId);
+
+    return Boolean(dragged && target && dragged.parentId === target.parentId);
+  }
+
   function syncPreviewScroll() {
     const textarea = textareaRef.current;
     const preview = previewRef.current;
@@ -377,7 +447,110 @@ export function KnowledgeEditor({
     restoreTextareaState(scrollTop, scrollLeft, nextCursor, nextCursor);
   }
 
+  async function uploadImage(file: File) {
+    if (!cloudinaryCloudName || !cloudinaryUploadPreset) {
+      throw new Error("Cloudinary 图床未配置");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", cloudinaryUploadPreset);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+    const result = (await response.json()) as CloudinaryUploadResponse;
+
+    if (!response.ok || !result.secure_url) {
+      throw new Error(result.error?.message || "图片上传失败");
+    }
+
+    return result.secure_url;
+  }
+
+  async function uploadAndInsertImages(
+    files: File[],
+    selectionStart: number,
+    selectionEnd: number,
+  ) {
+    const imageFiles = imageFilesFromList(files);
+
+    if (!imageFiles.length) {
+      return;
+    }
+
+    try {
+      setUploadStatus(`正在上传 ${imageFiles.length} 张图片...`);
+      const markdownItems = await Promise.all(
+        imageFiles.map(async (file) => {
+          const url = await uploadImage(file);
+
+          return `![${imageAltText(file.name)}|100|block](${url})`;
+        }),
+      );
+      const insertion = `\n${markdownItems.join("\n\n")}\n`;
+      const textarea = textareaRef.current;
+      const scrollTop = textarea?.scrollTop ?? 0;
+      const scrollLeft = textarea?.scrollLeft ?? 0;
+      const nextContent =
+        activeSection.content.slice(0, selectionStart) +
+        insertion +
+        activeSection.content.slice(selectionEnd);
+      const cursor = selectionStart + insertion.length;
+
+      updateActiveSection({ content: nextContent });
+      restoreTextareaState(scrollTop, scrollLeft, cursor, cursor);
+      setUploadStatus("图片已上传");
+      window.setTimeout(() => setUploadStatus(""), 1600);
+    } catch (error) {
+      setUploadStatus(error instanceof Error ? error.message : "图片上传失败");
+    }
+  }
+
+  function handleImagePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    const files = imageFilesFromList(event.clipboardData.files);
+
+    if (!files.length) {
+      return;
+    }
+
+    event.preventDefault();
+    void uploadAndInsertImages(
+      files,
+      event.currentTarget.selectionStart,
+      event.currentTarget.selectionEnd,
+    );
+  }
+
+  function handleImageDrop(event: DragEvent<HTMLTextAreaElement>) {
+    const files = imageFilesFromList(event.dataTransfer.files);
+
+    if (!files.length) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.focus();
+    void uploadAndInsertImages(
+      files,
+      event.currentTarget.selectionStart,
+      event.currentTarget.selectionEnd,
+    );
+  }
+
   function handleEditorKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      saveInPlaceButtonRef.current?.form?.requestSubmit(
+        saveInPlaceButtonRef.current,
+      );
+      return;
+    }
+
     if (event.key !== "Tab") {
       return;
     }
@@ -416,6 +589,35 @@ export function KnowledgeEditor({
         <div key={section.id}>
           <button
             type="button"
+            draggable
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", section.id);
+              setDraggedSectionId(section.id);
+            }}
+            onDragEnd={() => setDraggedSectionId(null)}
+            onDragOver={(event) => {
+              if (!canDropOnSection(section.id)) {
+                return;
+              }
+
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              const droppedSectionId =
+                event.dataTransfer.getData("text/plain") || draggedSectionId;
+              const rect = event.currentTarget.getBoundingClientRect();
+              const position =
+                event.clientY > rect.top + rect.height / 2 ? "after" : "before";
+
+              if (droppedSectionId) {
+                moveSection(droppedSectionId, section.id, position);
+              }
+
+              setDraggedSectionId(null);
+            }}
             onClick={() => {
               setActiveSectionId(section.id);
               setContextMenu(null);
@@ -426,7 +628,7 @@ export function KnowledgeEditor({
             className={`block w-full truncate rounded-md px-3 py-2 text-left text-sm font-medium ${
               isActive
                 ? "bg-[#24706f] text-white"
-                : "text-[#3f4754] hover:bg-[#f0f3f6]"
+                : "cursor-grab text-[#3f4754] hover:bg-[#f0f3f6] active:cursor-grabbing"
             }`}
             style={{ paddingLeft: `${12 + depth * 18}px` }}
           >
@@ -443,6 +645,16 @@ export function KnowledgeEditor({
       <input type="hidden" name="content" value={combinedMarkdown} />
       <input type="hidden" name="sections" value={JSON.stringify(sections)} />
       <input type="hidden" name="tags" value={JSON.stringify(tags)} />
+      <button
+        ref={saveInPlaceButtonRef}
+        type="submit"
+        name="stayOnEdit"
+        value="true"
+        className="sr-only"
+        tabIndex={-1}
+      >
+        保存并继续编辑
+      </button>
 
       <section className="space-y-4 rounded-lg border border-[#d8dee6] bg-white p-5">
         <label className="block space-y-2">
@@ -503,7 +715,7 @@ export function KnowledgeEditor({
       </section>
 
       <div
-        className="grid min-h-[720px] overflow-hidden rounded-lg border border-[#d8dee6] bg-white lg:grid-cols-[260px_1fr]"
+        className="grid min-h-[720px] rounded-lg border border-[#d8dee6] bg-white lg:grid-cols-[260px_1fr]"
         onKeyDown={handleEditorKeyDown}
         onClick={() => setContextMenu(null)}
       >
@@ -585,13 +797,21 @@ export function KnowledgeEditor({
                   updateActiveSection({ content: event.target.value });
                   window.requestAnimationFrame(syncPreviewScroll);
                 }}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={handleImageDrop}
+                onPaste={handleImagePaste}
                 onScroll={syncPreviewScroll}
                 className="h-[560px] w-full resize-y rounded-md border border-[#cfd6df] bg-[#fbfcfd] px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
                 required
               />
               <div className="mt-2 flex justify-between text-xs text-[#667085]">
                 <span>{sections.length} 个章节</span>
-                <span>{wordCount} words</span>
+                <span>
+                  {uploadStatus ||
+                    (!cloudinaryCloudName || !cloudinaryUploadPreset
+                      ? "图床未配置"
+                      : `${wordCount} words`)}
+                </span>
               </div>
             </div>
 

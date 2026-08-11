@@ -172,6 +172,7 @@ export async function updateKnowledge(formData: FormData): Promise<void> {
   const summary = normalizeText(formData.get("summary"));
   const content = normalizeText(formData.get("content"));
   const tags = parseTags(formData.get("tags"));
+  const stayOnEdit = normalizeText(formData.get("stayOnEdit")) === "true";
 
   if (!slug) {
     throw new Error("缺少知识库标识，无法更新。");
@@ -179,10 +180,12 @@ export async function updateKnowledge(formData: FormData): Promise<void> {
 
   validateKnowledgeInput(title, content);
 
+  const nextSlug = createSlug(title);
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("knowledge")
     .update({
+      slug: nextSlug,
       title,
       summary: summary || createSummary(content),
       content,
@@ -201,7 +204,15 @@ export async function updateKnowledge(formData: FormData): Promise<void> {
   revalidatePath("/");
   revalidatePath("/knowledge");
   revalidatePath(`/knowledge/${encodeURIComponent(slug)}`);
-  redirect(`/knowledge/${encodeURIComponent(slug)}`);
+  revalidatePath(`/knowledge/${encodeURIComponent(slug)}/edit`);
+  revalidatePath(`/knowledge/${encodeURIComponent(nextSlug)}`);
+  revalidatePath(`/knowledge/${encodeURIComponent(nextSlug)}/edit`);
+
+  if (stayOnEdit) {
+    redirect(`/knowledge/${encodeURIComponent(nextSlug)}/edit`);
+  }
+
+  redirect(`/knowledge/${encodeURIComponent(nextSlug)}`);
 }
 
 export async function deleteKnowledge(formData: FormData): Promise<void> {
