@@ -8,6 +8,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 const allPostsLabel = "全部帖子";
+const deletedPostTag = "__deleted__";
 
 function normalizeText(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value.trim() : "";
@@ -123,4 +124,45 @@ export async function updatePost(formData: FormData): Promise<void> {
   revalidatePath("/discuss");
   revalidatePath(`/posts/${slug}`);
   redirect(`/posts/${slug}`);
+}
+
+export async function deletePost(formData: FormData): Promise<void> {
+  if (!hasSupabaseEnv()) {
+    throw new Error("Supabase 环境变量未配置，暂时无法删除帖子。");
+  }
+
+  const slug = normalizeText(formData.get("slug"));
+
+  if (!slug) {
+    throw new Error("缺少帖子标识，无法删除。");
+  }
+
+  const supabase = await createClient();
+  const { data: post, error: selectError } = await supabase
+    .from("forum_posts")
+    .select("tags")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (selectError || !post) {
+    throw new Error(
+      `删除失败：${selectError?.message ?? "未找到要删除的帖子，请刷新后重试"}`,
+    );
+  }
+
+  const tags = Array.isArray(post.tags) ? post.tags : [];
+  const nextTags = Array.from(new Set([...tags, deletedPostTag]));
+  const { error } = await supabase
+    .from("forum_posts")
+    .update({ tags: nextTags })
+    .eq("slug", slug);
+
+  if (error) {
+    throw new Error(`删除失败：${error.message}`);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/discuss");
+  revalidatePath(`/posts/${slug}`);
+  redirect("/discuss");
 }

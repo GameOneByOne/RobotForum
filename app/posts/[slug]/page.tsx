@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { MarkdownContent } from "@/components/markdown-content";
 import { SiteHeader } from "@/components/site-header";
+import { deletePost } from "@/lib/forum/actions";
 import { getForumPostBySlug } from "@/lib/forum/posts";
 
 type PostPageProps = {
@@ -46,12 +47,23 @@ export default async function PostPage({ params }: PostPageProps) {
             >
               返回讨论列表
             </Link>
-            <Link
-              href={`/posts/${post.slug}/edit`}
-              className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
-            >
-              编辑帖子
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/posts/${post.slug}/edit`}
+                className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+              >
+                编辑帖子
+              </Link>
+              <form action={deletePost}>
+                <input type="hidden" name="slug" value={post.slug} />
+                <button
+                  type="submit"
+                  className="rounded-md border border-[#d92d20] bg-white px-4 py-2 text-sm font-semibold text-[#d92d20] transition hover:bg-[#fff4f2]"
+                >
+                  删除帖子
+                </button>
+              </form>
+            </div>
           </div>
           <p className="mt-5 text-xs font-semibold uppercase text-[#24706f]">
             {post.category}

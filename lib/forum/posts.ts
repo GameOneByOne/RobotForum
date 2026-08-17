@@ -16,6 +16,7 @@ type ForumPostRow = {
 };
 
 const allPostsLabel = "全部帖子";
+const deletedPostTag = "__deleted__";
 
 function formatDate(value: string | null): string {
   return value ? value.slice(0, 10) : "";
@@ -41,7 +42,7 @@ function categoryFromTags(tags: string[]): string {
 }
 
 function mapPost(row: ForumPostRow): ForumPost {
-  const tags = row.tags ?? [];
+  const tags = (row.tags ?? []).filter((tag) => tag !== deletedPostTag);
 
   return {
     slug: row.slug,
@@ -106,7 +107,9 @@ export async function getForumPosts(category: string): Promise<ForumPost[]> {
       return [];
     }
 
-    return data.map((row) => mapPost(row as ForumPostRow));
+    return data
+      .filter((row) => !(row as ForumPostRow).tags?.includes(deletedPostTag))
+      .map((row) => mapPost(row as ForumPostRow));
   } catch {
     return [];
   }
@@ -136,6 +139,10 @@ export async function getForumPostBySlug(
       .maybeSingle();
 
     if (error || !data) {
+      return undefined;
+    }
+
+    if ((data as ForumPostRow).tags?.includes(deletedPostTag)) {
       return undefined;
     }
 

@@ -15,6 +15,10 @@ type TagRecord = {
   name: string;
 };
 
+type UpdateKnowledgeResult = {
+  slug: string;
+};
+
 function normalizeText(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -107,14 +111,24 @@ async function syncKnowledgeTags(
     throw new Error(`标签读取失败：${selectError?.message ?? "未知错误"}`);
   }
 
-  const relations = (tagRows as TagRecord[]).map((tag) => ({
-    knowledge_id: knowledgeId,
-    tag_id: tag.id,
-  }));
+  const relations = Array.from(
+    new Map(
+      (tagRows as TagRecord[]).map((tag) => [
+        tag.id,
+        {
+          knowledge_id: knowledgeId,
+          tag_id: tag.id,
+        },
+      ]),
+    ).values(),
+  );
 
   const { error: relationError } = await supabase
     .from("knowledge_tags")
-    .insert(relations);
+    .upsert(relations, {
+      ignoreDuplicates: true,
+      onConflict: "knowledge_id,tag_id",
+    });
 
   if (relationError) {
     throw new Error(`标签关联失败：${relationError.message}`);
@@ -163,18 +177,40 @@ export async function publishKnowledge(formData: FormData): Promise<void> {
 }
 
 export async function updateKnowledge(formData: FormData): Promise<void> {
+  const stayOnEdit = normalizeText(formData.get("stayOnEdit")) === "true";
+  const currentSlug = normalizeText(formData.get("slug"));
+  const result = await saveKnowledgeUpdate(formData);
+
+  if (currentSlug) {
+    revalidatePath(`/knowledge/${encodeURIComponent(currentSlug)}`);
+    revalidatePath(`/knowledge/${encodeURIComponent(currentSlug)}/edit`);
+  }
+
+  revalidatePath(`/knowledge/${encodeURIComponent(result.slug)}`);
+  revalidatePath(`/knowledge/${encodeURIComponent(result.slug)}/edit`);
+
+  if (stayOnEdit) {
+    redirect(`/knowledge/${encodeURIComponent(result.slug)}/edit`);
+  }
+
+  redirect(`/knowledge/${encodeURIComponent(result.slug)}`);
+}
+
+export async function saveKnowledgeUpdate(
+  formData: FormData,
+): Promise<UpdateKnowledgeResult> {
   if (!hasSupabaseEnv()) {
     throw new Error("Supabase 环境变量未配置，暂时无法更新知识库内容。");
   }
 
   const slug = normalizeText(formData.get("slug"));
+  const id = normalizeText(formData.get("id"));
   const title = normalizeText(formData.get("title"));
   const summary = normalizeText(formData.get("summary"));
   const content = normalizeText(formData.get("content"));
   const tags = parseTags(formData.get("tags"));
-  const stayOnEdit = normalizeText(formData.get("stayOnEdit")) === "true";
 
-  if (!slug) {
+  if (!id && !slug) {
     throw new Error("缺少知识库标识，无法更新。");
   }
 
@@ -182,7 +218,7 @@ export async function updateKnowledge(formData: FormData): Promise<void> {
 
   const nextSlug = createSlug(title);
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const updateQuery = supabase
     .from("knowledge")
     .update({
       slug: nextSlug,
@@ -191,28 +227,26 @@ export async function updateKnowledge(formData: FormData): Promise<void> {
       content,
       status: "published",
     })
-    .eq("slug", slug)
-    .select("id")
-    .single();
+    .select("id");
+  const { data, error } = await (id
+    ? updateQuery.eq("id", id)
+    : updateQuery.eq("slug", slug)
+  ).maybeSingle();
 
   if (error || !data) {
-    throw new Error(`更新失败：${error?.message ?? "未知错误"}`);
+    throw new Error(
+      `更新失败：${error?.message ?? "未找到要更新的知识库，请刷新后重试"}`,
+    );
   }
 
   await syncKnowledgeTags(supabase, (data as KnowledgeRecord).id, tags);
 
   revalidatePath("/");
   revalidatePath("/knowledge");
-  revalidatePath(`/knowledge/${encodeURIComponent(slug)}`);
-  revalidatePath(`/knowledge/${encodeURIComponent(slug)}/edit`);
-  revalidatePath(`/knowledge/${encodeURIComponent(nextSlug)}`);
-  revalidatePath(`/knowledge/${encodeURIComponent(nextSlug)}/edit`);
 
-  if (stayOnEdit) {
-    redirect(`/knowledge/${encodeURIComponent(nextSlug)}/edit`);
-  }
-
-  redirect(`/knowledge/${encodeURIComponent(nextSlug)}`);
+  return {
+    slug: nextSlug,
+  };
 }
 
 export async function deleteKnowledge(formData: FormData): Promise<void> {

@@ -10,6 +10,7 @@ export type ProjectCard = {
 };
 
 export type KnowledgeItem = {
+  id: string;
   slug: string;
   title: string;
   summary: string;
