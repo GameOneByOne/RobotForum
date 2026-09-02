@@ -59,8 +59,6 @@ export default async function EditKnowledgePage({
         action={updateKnowledge}
         className="mx-auto w-[80vw] max-w-none space-y-5 px-5 py-6"
       >
-        <input type="hidden" name="slug" value={item.slug} />
-
         {!isSupabaseConfigured && (
           <div className="rounded-lg border border-[#d8dee6] bg-white p-4 text-sm text-[#667085]">
             Supabase 环境变量未配置，更新按钮会在提交时失败；配置完成后可直接写入 knowledge 表。
@@ -68,6 +66,8 @@ export default async function EditKnowledgePage({
         )}
 
         <KnowledgeEditor
+          initialKnowledgeId={item.id}
+          initialSlug={item.slug}
           initialTitle={item.title}
           initialSummary={item.summary}
           initialTags={item.tags}

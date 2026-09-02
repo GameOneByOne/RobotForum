@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent, MouseEvent } from "react";
+import type { ClipboardEvent, DragEvent, KeyboardEvent, MouseEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 
 import { MarkdownContent } from "@/components/markdown-content";
@@ -10,6 +10,8 @@ import type { KnowledgeSection } from "@/lib/knowledge/sections";
 type EditableKnowledgeSection = Omit<KnowledgeSection, "level">;
 
 type KnowledgeEditorProps = {
+  initialKnowledgeId?: string;
+  initialSlug?: string;
   initialTitle?: string;
   initialSummary?: string;
   initialTags?: string[];
@@ -29,6 +31,27 @@ type ContextMenuState = {
   y: number;
   sectionId: string | null;
 } | null;
+
+type DropIndicatorState = {
+  position: "before" | "after";
+  sectionId: string;
+} | null;
+
+type CloudinaryUploadResponse = {
+  secure_url?: string;
+  error?: {
+    message?: string;
+  };
+};
+
+type SaveKnowledgeResponse = {
+  error?: string;
+  slug?: string;
+};
+
+const cloudinaryCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const cloudinaryUploadPreset =
+  process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 const firstSectionId = "section-root";
 
@@ -186,12 +209,23 @@ function normalizeTag(value: string) {
   return value.trim().replace(/\s+/g, " ");
 }
 
+function imageFilesFromList(files: FileList | File[]) {
+  return Array.from(files).filter((file) => file.type.startsWith("image/"));
+}
+
+function imageAltText(fileName: string) {
+  return fileName.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || "image";
+}
+
 export function KnowledgeEditor({
+  initialKnowledgeId = "",
+  initialSlug = "",
   initialTitle = "未命名知识库",
   initialSummary = "",
   initialTags = [],
   initialSections,
 }: KnowledgeEditorProps) {
+  const [currentSlug, setCurrentSlug] = useState(initialSlug);
   const [knowledgeTitle, setKnowledgeTitle] = useState(initialTitle);
   const [summary, setSummary] = useState(initialSummary);
   const [tags, setTags] = useState<string[]>(initialTags);
@@ -203,7 +237,12 @@ export function KnowledgeEditor({
     initialSections?.[0]?.id ?? firstSectionId,
   );
   const [isSplitPreview, setIsSplitPreview] = useState(false);
+  const [isSectionNavCollapsed, setIsSectionNavCollapsed] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
+  const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
+  const [dropIndicator, setDropIndicator] = useState<DropIndicatorState>(null);
+  const [saveStatus, setSaveStatus] = useState("");
+  const [uploadStatus, setUploadStatus] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -293,6 +332,54 @@ export function KnowledgeEditor({
     setContextMenu(null);
   }
 
+  function moveSection(
+    draggedId: string,
+    targetId: string,
+    position: "before" | "after",
+  ) {
+    if (draggedId === targetId) {
+      return;
+    }
+
+    setSections((current) => {
+      const dragged = current.find((section) => section.id === draggedId);
+      const target = current.find((section) => section.id === targetId);
+
+      if (!dragged || !target || dragged.parentId !== target.parentId) {
+        return current;
+      }
+
+      const nextSections = current.filter((section) => section.id !== draggedId);
+      const targetIndex = nextSections.findIndex(
+        (section) => section.id === targetId,
+      );
+
+      if (targetIndex < 0) {
+        return current;
+      }
+
+      const insertionIndex =
+        position === "after" ? targetIndex + 1 : targetIndex;
+
+      return [
+        ...nextSections.slice(0, insertionIndex),
+        dragged,
+        ...nextSections.slice(insertionIndex),
+      ];
+    });
+  }
+
+  function canDropOnSection(targetId: string) {
+    if (!draggedSectionId || draggedSectionId === targetId) {
+      return false;
+    }
+
+    const dragged = sections.find((section) => section.id === draggedSectionId);
+    const target = sections.find((section) => section.id === targetId);
+
+    return Boolean(dragged && target && dragged.parentId === target.parentId);
+  }
+
   function syncPreviewScroll() {
     const textarea = textareaRef.current;
     const preview = previewRef.current;
@@ -377,7 +464,149 @@ export function KnowledgeEditor({
     restoreTextareaState(scrollTop, scrollLeft, nextCursor, nextCursor);
   }
 
+  async function saveInPlace() {
+    const textarea = textareaRef.current;
+    const form = textarea?.form;
+
+    if (!form) {
+      return;
+    }
+
+    const scrollTop = textarea.scrollTop;
+    const scrollLeft = textarea.scrollLeft;
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+    const formData = new FormData(form);
+
+    try {
+      setSaveStatus("正在保存...");
+      const response = await fetch("/api/knowledge/save", {
+        method: "POST",
+        body: formData,
+      });
+      const result = (await response.json()) as SaveKnowledgeResponse;
+
+      if (!response.ok || !result.slug) {
+        throw new Error(result.error || "保存失败");
+      }
+
+      setCurrentSlug(result.slug);
+      window.history.replaceState(
+        null,
+        "",
+        `/knowledge/${encodeURIComponent(result.slug)}/edit`,
+      );
+      restoreTextareaState(scrollTop, scrollLeft, selectionStart, selectionEnd);
+      setSaveStatus("已保存");
+      window.setTimeout(() => setSaveStatus(""), 1600);
+    } catch (error) {
+      restoreTextareaState(scrollTop, scrollLeft, selectionStart, selectionEnd);
+      setSaveStatus(error instanceof Error ? error.message : "保存失败");
+    }
+  }
+
+  async function uploadImage(file: File) {
+    if (!cloudinaryCloudName || !cloudinaryUploadPreset) {
+      throw new Error("Cloudinary 图床未配置");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", cloudinaryUploadPreset);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+    const result = (await response.json()) as CloudinaryUploadResponse;
+
+    if (!response.ok || !result.secure_url) {
+      throw new Error(result.error?.message || "图片上传失败");
+    }
+
+    return result.secure_url;
+  }
+
+  async function uploadAndInsertImages(
+    files: File[],
+    selectionStart: number,
+    selectionEnd: number,
+  ) {
+    const imageFiles = imageFilesFromList(files);
+
+    if (!imageFiles.length) {
+      return;
+    }
+
+    try {
+      setUploadStatus(`正在上传 ${imageFiles.length} 张图片...`);
+      const markdownItems = await Promise.all(
+        imageFiles.map(async (file) => {
+          const url = await uploadImage(file);
+
+          return `![${imageAltText(file.name)}|100|block](${url})`;
+        }),
+      );
+      const insertion = `\n${markdownItems.join("\n\n")}\n`;
+      const textarea = textareaRef.current;
+      const scrollTop = textarea?.scrollTop ?? 0;
+      const scrollLeft = textarea?.scrollLeft ?? 0;
+      const nextContent =
+        activeSection.content.slice(0, selectionStart) +
+        insertion +
+        activeSection.content.slice(selectionEnd);
+      const cursor = selectionStart + insertion.length;
+
+      updateActiveSection({ content: nextContent });
+      restoreTextareaState(scrollTop, scrollLeft, cursor, cursor);
+      setUploadStatus("图片已上传");
+      window.setTimeout(() => setUploadStatus(""), 1600);
+    } catch (error) {
+      setUploadStatus(error instanceof Error ? error.message : "图片上传失败");
+    }
+  }
+
+  function handleImagePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    const files = imageFilesFromList(event.clipboardData.files);
+
+    if (!files.length) {
+      return;
+    }
+
+    event.preventDefault();
+    void uploadAndInsertImages(
+      files,
+      event.currentTarget.selectionStart,
+      event.currentTarget.selectionEnd,
+    );
+  }
+
+  function handleImageDrop(event: DragEvent<HTMLTextAreaElement>) {
+    const files = imageFilesFromList(event.dataTransfer.files);
+
+    if (!files.length) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.focus();
+    void uploadAndInsertImages(
+      files,
+      event.currentTarget.selectionStart,
+      event.currentTarget.selectionEnd,
+    );
+  }
+
   function handleEditorKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      void saveInPlace();
+      return;
+    }
+
     if (event.key !== "Tab") {
       return;
     }
@@ -411,11 +640,62 @@ export function KnowledgeEditor({
   function renderSectionTree(parentId: string | null, depth = 0) {
     return childrenOf(sections, parentId).map((section) => {
       const isActive = section.id === activeSection.id;
+      const isDropBefore =
+        dropIndicator?.sectionId === section.id &&
+        dropIndicator.position === "before";
+      const isDropAfter =
+        dropIndicator?.sectionId === section.id &&
+        dropIndicator.position === "after";
 
       return (
         <div key={section.id}>
+          {isDropBefore && (
+            <div className="my-1 h-0.5 rounded-full bg-[#24706f]" />
+          )}
           <button
             type="button"
+            draggable
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", section.id);
+              setDraggedSectionId(section.id);
+            }}
+            onDragEnd={() => {
+              setDraggedSectionId(null);
+              setDropIndicator(null);
+            }}
+            onDragOver={(event) => {
+              if (!canDropOnSection(section.id)) {
+                setDropIndicator(null);
+                return;
+              }
+
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+              const rect = event.currentTarget.getBoundingClientRect();
+              const position =
+                event.clientY > rect.top + rect.height / 2 ? "after" : "before";
+
+              setDropIndicator({
+                sectionId: section.id,
+                position,
+              });
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              const droppedSectionId =
+                event.dataTransfer.getData("text/plain") || draggedSectionId;
+              const rect = event.currentTarget.getBoundingClientRect();
+              const position =
+                event.clientY > rect.top + rect.height / 2 ? "after" : "before";
+
+              if (droppedSectionId) {
+                moveSection(droppedSectionId, section.id, position);
+              }
+
+              setDraggedSectionId(null);
+              setDropIndicator(null);
+            }}
             onClick={() => {
               setActiveSectionId(section.id);
               setContextMenu(null);
@@ -426,12 +706,15 @@ export function KnowledgeEditor({
             className={`block w-full truncate rounded-md px-3 py-2 text-left text-sm font-medium ${
               isActive
                 ? "bg-[#24706f] text-white"
-                : "text-[#3f4754] hover:bg-[#f0f3f6]"
+                : "cursor-grab text-[#3f4754] hover:bg-[#f0f3f6] active:cursor-grabbing"
             }`}
             style={{ paddingLeft: `${12 + depth * 18}px` }}
           >
             {section.title || "未命名章节"}
           </button>
+          {isDropAfter && (
+            <div className="my-1 h-0.5 rounded-full bg-[#24706f]" />
+          )}
           {renderSectionTree(section.id, depth + 1)}
         </div>
       );
@@ -440,6 +723,8 @@ export function KnowledgeEditor({
 
   return (
     <div className="space-y-5">
+      <input type="hidden" name="id" value={initialKnowledgeId} />
+      <input type="hidden" name="slug" value={currentSlug} />
       <input type="hidden" name="content" value={combinedMarkdown} />
       <input type="hidden" name="sections" value={JSON.stringify(sections)} />
       <input type="hidden" name="tags" value={JSON.stringify(tags)} />
@@ -503,7 +788,11 @@ export function KnowledgeEditor({
       </section>
 
       <div
-        className="grid min-h-[720px] overflow-hidden rounded-lg border border-[#d8dee6] bg-white lg:grid-cols-[260px_1fr]"
+        className={`grid min-h-[720px] rounded-lg border border-[#d8dee6] bg-white ${
+          isSectionNavCollapsed
+            ? "lg:grid-cols-[44px_1fr]"
+            : "lg:grid-cols-[260px_1fr]"
+        }`}
         onKeyDown={handleEditorKeyDown}
         onClick={() => setContextMenu(null)}
       >
@@ -511,16 +800,53 @@ export function KnowledgeEditor({
           className="border-b border-[#d8dee6] bg-[#fbfcfd] lg:border-b-0 lg:border-r"
           onContextMenu={handleBlankContextMenu}
         >
-          <div className="border-b border-[#d8dee6] p-4">
-            <p className="text-sm font-semibold text-[#171a20]">章节导航</p>
-            <p className="mt-1 text-xs leading-5 text-[#667085]">
-              右键空白处新建章节，右键章节创建子章节或删除章节。
-            </p>
-          </div>
+          {isSectionNavCollapsed ? (
+            <div className="flex h-full min-h-[720px] items-start justify-center py-3">
+              <button
+                type="button"
+                title="展开章节导航"
+                aria-label="展开章节导航"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIsSectionNavCollapsed(false);
+                }}
+                className="h-8 w-8 rounded-md border border-[#cfd6df] bg-white text-sm font-semibold text-[#3f4754] hover:border-[#24706f] hover:text-[#24706f]"
+              >
+                &gt;
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="border-b border-[#d8dee6] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[#171a20]">
+                      章节导航
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-[#667085]">
+                      右键空白处新建章节，拖拽同级章节排序。
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    title="隐藏章节导航"
+                    aria-label="隐藏章节导航"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setIsSectionNavCollapsed(true);
+                    }}
+                    className="h-8 w-8 shrink-0 rounded-md border border-[#cfd6df] bg-white text-sm font-semibold text-[#3f4754] hover:border-[#24706f] hover:text-[#24706f]"
+                  >
+                    &lt;
+                  </button>
+                </div>
+              </div>
 
-          <div className="h-[640px] space-y-1 overflow-y-auto p-3">
-            {renderSectionTree(null)}
-          </div>
+              <div className="h-[640px] space-y-1 overflow-y-auto p-3">
+                {renderSectionTree(null)}
+              </div>
+            </>
+          )}
         </aside>
 
         <section className="min-w-0">
@@ -585,13 +911,22 @@ export function KnowledgeEditor({
                   updateActiveSection({ content: event.target.value });
                   window.requestAnimationFrame(syncPreviewScroll);
                 }}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={handleImageDrop}
+                onPaste={handleImagePaste}
                 onScroll={syncPreviewScroll}
                 className="h-[560px] w-full resize-y rounded-md border border-[#cfd6df] bg-[#fbfcfd] px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
                 required
               />
               <div className="mt-2 flex justify-between text-xs text-[#667085]">
                 <span>{sections.length} 个章节</span>
-                <span>{wordCount} words</span>
+                <span>
+                  {saveStatus ||
+                    uploadStatus ||
+                    (!cloudinaryCloudName || !cloudinaryUploadPreset
+                      ? "图床未配置"
+                      : `${wordCount} words`)}
+                </span>
               </div>
             </div>
 

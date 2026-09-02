@@ -82,7 +82,10 @@ export default async function KnowledgeDetailPage({
         </div>
       </header>
 
-      <KnowledgeDetailView sections={sections} />
+      <KnowledgeDetailView
+        editHref={`/knowledge/${encodedSlug}/edit`}
+        sections={sections}
+      />
     </main>
   );
 }

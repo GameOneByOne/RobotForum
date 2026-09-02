@@ -24,6 +24,7 @@ type ProjectRow = {
 };
 
 type KnowledgeRow = {
+  id: string;
   slug: string;
   title: string;
   summary: string | null;
@@ -108,6 +109,7 @@ function mapKnowledge(row: KnowledgeRow): KnowledgeItem {
   const difficultyKey = row.difficulty as keyof typeof difficultyMap;
 
   return {
+    id: row.id,
     slug: row.slug,
     title: row.title,
     summary: row.summary ?? "",
@@ -170,7 +172,7 @@ export async function getKnowledgeItems(): Promise<KnowledgeItem[]> {
     const { data, error } = await supabase
       .from("knowledge")
       .select(
-        "slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+        "id,slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
       )
       .eq("status", "published")
       .order("created_at", { ascending: false });
@@ -210,7 +212,7 @@ export async function getKnowledgeItemBySlug(
     const { data, error } = await supabase
       .from("knowledge")
       .select(
-        "slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+        "id,slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
       )
       .in("slug", slugCandidates)
       .eq("status", "published")

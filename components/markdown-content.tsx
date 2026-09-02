@@ -1,6 +1,7 @@
 "use client";
 
-import type { ComponentPropsWithoutRef } from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import { isValidElement } from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -13,223 +14,76 @@ type MarkdownContentProps = {
   source: string;
 };
 
-type CodeProps = ComponentPropsWithoutRef<"code"> & {
-  inline?: boolean;
+type CodeTab = {
+  title: string;
+  language: string;
+  code: string;
 };
 
 type MarkdownSegment =
   | {
-      type: "markdown";
       content: string;
+      type: "markdown";
     }
   | {
-      type: "tabs";
-      tabs: MarkdownTab[];
+      tabs: CodeTab[];
+      type: "code-tabs";
     };
 
-type MarkdownTab = {
-  title: string;
-  content: string;
+type CodeProps = ComponentPropsWithoutRef<"code"> & {
+  inline?: boolean;
 };
 
-function preserveSingleLineBreaks(source: string) {
-  let inFence = false;
-  const lines = source.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+type ImagePlacement = "block" | "left" | "right";
 
-  function isBlockSyntax(line: string) {
-    return /^(\s{0,3}(#{1,6}\s|[-*+]\s|\d+\.\s|>\s|\|)|\s*---+\s*$)/.test(
-      line,
-    );
-  }
+type ImageOptions = {
+  alt: string;
+  placement: ImagePlacement;
+  size: number;
+};
 
-  function isDirective(line: string) {
-    return /^\s*(:::|<!--\s*\/?tabs?\b|<!--\s*tab:)/.test(line);
-  }
+const codeTabsBlockPattern = /^:::code-tabs\s*\n([\s\S]*?)\n:::\s*$/gm;
+const fencedCodePattern =
+  /^```([A-Za-z0-9_-]+)?(?:\s+title=(?:"([^"]+)"|'([^']+)'|([^\s]+)))?\s*\n([\s\S]*?)\n```\s*$/gm;
 
-  return lines
-    .map((line, index) => {
-      if (/^\s*```/.test(line)) {
-        inFence = !inFence;
-        return line;
-      }
-
-      if (inFence || !line.trim()) {
-        return line;
-      }
-
-      const nextLine = lines[index + 1] ?? "";
-
-      if (
-        !nextLine.trim() ||
-        isDirective(line) ||
-        isDirective(nextLine) ||
-        isBlockSyntax(line) ||
-        isBlockSyntax(nextLine)
-      ) {
-        return line;
-      }
-
-      return `${line.replace(/[ \t]+$/, "")}\\`;
-    })
-    .join("\n");
+function hasMultilineContent(children: ReactNode) {
+  return String(children).includes("\n");
 }
 
-function parseTabbedMarkdown(source: string): MarkdownSegment[] {
-  const normalizedSource = source.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  const htmlTabBlockPattern =
-    /<!--\s*tabs\s*-->([\s\S]*?)<!--\s*\/tabs\s*-->/g;
-  const segments: MarkdownSegment[] = [];
-  let lastIndex = 0;
+function normalizeImagePlacement(value: string | undefined): ImagePlacement {
+  const placement = value?.trim().toLowerCase();
 
-  for (const match of normalizedSource.matchAll(htmlTabBlockPattern)) {
-    const blockStart = match.index ?? 0;
-    const blockEnd = blockStart + match[0].length;
-    const before = normalizedSource.slice(lastIndex, blockStart).trim();
-
-    if (before) {
-      segments.push({ type: "markdown", content: before });
-    }
-
-    const tabs = parseHtmlTabs(match[1]);
-
-    if (tabs.length) {
-      segments.push({ type: "tabs", tabs });
-    }
-
-    lastIndex = blockEnd;
+  if (placement === "left" || placement === "inline-left" || placement === "左") {
+    return "left";
   }
 
-  const after = normalizedSource.slice(lastIndex).trim();
-
-  if (after) {
-    segments.push({ type: "markdown", content: after });
+  if (placement === "right" || placement === "inline-right" || placement === "右") {
+    return "right";
   }
 
-  if (segments.length) {
-    return segments;
-  }
-
-  return parseColonTabs(normalizedSource);
+  return "block";
 }
 
-function parseHtmlTabs(source: string): MarkdownTab[] {
-  const tabPattern =
-    /<!--\s*tab:\s*(.+?)\s*-->([\s\S]*?)<!--\s*\/tab\s*-->/g;
+function parseImageOptions(alt = ""): ImageOptions {
+  const [label = "", sizeValue, placementValue] = alt.split("|");
+  const parsedSize = Number.parseFloat(sizeValue ?? "");
+  const size = Number.isFinite(parsedSize)
+    ? Math.min(Math.max(parsedSize, 0), 100)
+    : 100;
 
-  return Array.from(source.matchAll(tabPattern)).map((match) => ({
-    title: match[1].trim(),
-    content: match[2].trim(),
-  }));
+  return {
+    alt: label.trim(),
+    placement: normalizeImagePlacement(placementValue),
+    size,
+  };
 }
 
-function parseColonTabs(source: string): MarkdownSegment[] {
-  const lines = source.split("\n");
-  const segments: MarkdownSegment[] = [];
-  let markdownBuffer: string[] = [];
-  let inFence = false;
-  let index = 0;
-
-  function flushMarkdown() {
-    const content = markdownBuffer.join("\n").trim();
-
-    if (content) {
-      segments.push({ type: "markdown", content });
-    }
-
-    markdownBuffer = [];
-  }
-
-  while (index < lines.length) {
-    const line = lines[index];
-
-    if (/^\s*:::tabs\s*$/.test(line)) {
-      const tabs: MarkdownTab[] = [];
-      let currentTab: MarkdownTab | undefined;
-      let inTabFence = false;
-
-      flushMarkdown();
-      index += 1;
-
-      while (index < lines.length) {
-        const tabLine = lines[index];
-        const tabStart =
-          /^:::tab\s+(.+)$/.exec(tabLine.trim()) ??
-          /^<!--\s*tab:\s*(.+?)\s*-->\s*$/.exec(tabLine.trim());
-
-        if (/^\s*```/.test(tabLine)) {
-          inTabFence = !inTabFence;
-          currentTab?.content && (currentTab.content += "\n");
-          if (currentTab) {
-            currentTab.content += tabLine;
-          }
-          index += 1;
-          continue;
-        }
-
-        if (!inTabFence && tabStart) {
-          currentTab = {
-            title: tabStart[1].trim(),
-            content: "",
-          };
-          tabs.push(currentTab);
-          index += 1;
-          continue;
-        }
-
-        if (
-          !inTabFence &&
-          (tabLine.trim() === ":::" ||
-            /^<!--\s*(\/tab|\/tabs)\s*-->\s*$/.test(tabLine.trim()))
-        ) {
-          if (currentTab) {
-            currentTab.content = currentTab.content.trim();
-            currentTab = undefined;
-            index += 1;
-            continue;
-          }
-
-          index += 1;
-          break;
-        }
-
-        if (currentTab) {
-          currentTab.content = currentTab.content
-            ? `${currentTab.content}\n${tabLine}`
-            : tabLine;
-        }
-
-        index += 1;
-      }
-
-      if (tabs.length) {
-        segments.push({ type: "tabs", tabs });
-      }
-
-      continue;
-    }
-
-    if (/^\s*```/.test(line)) {
-      inFence = !inFence;
-      markdownBuffer.push(line);
-      index += 1;
-      continue;
-    }
-
-    markdownBuffer.push(line);
-    index += 1;
-  }
-
-  flushMarkdown();
-
-  return segments;
-}
-
-function CodeBlock({ inline, className, children, ...props }: CodeProps) {
+function CodeBlock({ className, children, ...props }: CodeProps) {
   const match = /language-(\w+)/.exec(className ?? "");
   const language = match?.[1];
   const code = String(children).replace(/\n$/, "");
 
-  if (!inline && language) {
+  if (language) {
     return (
       <div className="overflow-hidden rounded-lg border border-[#d8dee6] bg-[#fbfcfd]">
         <div className="flex min-h-9 items-center justify-between border-b border-[#d8dee6] bg-[#f0f3f6] px-3 text-xs font-medium text-[#526071]">
@@ -262,30 +116,206 @@ function CodeBlock({ inline, className, children, ...props }: CodeProps) {
     );
   }
 
-  if (!inline) {
-    return (
-      <pre className="overflow-x-auto rounded-lg border border-[#d8dee6] bg-[#fbfcfd] p-4">
-        <code
-          {...props}
-          className="font-mono text-sm leading-7 text-[#171a20]"
-        >
-          {children}
-        </code>
-      </pre>
-    );
-  }
-
   return (
     <code
       {...props}
-      className="rounded bg-[#eef2f6] px-1.5 py-0.5 font-mono text-sm text-[#171a20]"
+      className={
+        hasMultilineContent(children)
+          ? "block whitespace-pre-wrap font-mono text-sm leading-7 text-[#171a20]"
+          : "rounded bg-[#eef2f6] px-1.5 py-0.5 font-mono text-sm text-[#171a20]"
+      }
     >
       {children}
     </code>
   );
 }
 
-function MarkdownBlock({ source }: MarkdownContentProps) {
+function PreBlock({
+  children,
+  ...props
+}: ComponentPropsWithoutRef<"pre">) {
+  if (
+    isValidElement<{ className?: string }>(children) &&
+    /language-(\w+)/.test(children.props.className ?? "")
+  ) {
+    return children;
+  }
+
+  return (
+    <pre
+      {...props}
+      className="overflow-x-auto rounded-lg border border-[#d8dee6] bg-[#fbfcfd] p-4"
+    >
+      {children}
+    </pre>
+  );
+}
+
+function MarkdownImage({
+  alt,
+  src,
+  title,
+}: ComponentPropsWithoutRef<"img">) {
+  const options = parseImageOptions(alt);
+  const width = `${options.size}%`;
+  const image = (
+    // Markdown images can point to arbitrary user-provided remote URLs.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      alt={options.alt}
+      src={src}
+      title={title}
+      className="h-auto w-full rounded-md border border-[#d8dee6]"
+    />
+  );
+
+  if (options.placement === "left") {
+    return (
+      <span
+        className="float-left mr-4 mb-3 inline-block max-w-full"
+        style={{ width }}
+      >
+        {image}
+      </span>
+    );
+  }
+
+  if (options.placement === "right") {
+    return (
+      <span
+        className="float-right mb-3 ml-4 inline-block max-w-full"
+        style={{ width }}
+      >
+        {image}
+      </span>
+    );
+  }
+
+  return (
+    <span className="mx-auto my-4 block max-w-full" style={{ width }}>
+      {image}
+    </span>
+  );
+}
+
+function parseCodeTabs(value: string): CodeTab[] {
+  const tabs: CodeTab[] = [];
+
+  for (const match of value.matchAll(fencedCodePattern)) {
+    const language = match[1] || "text";
+    const title = match[2] || match[3] || match[4] || language.toUpperCase();
+
+    tabs.push({
+      title,
+      language,
+      code: match[5].replace(/\n$/, ""),
+    });
+  }
+
+  return tabs;
+}
+
+function parseMarkdownSegments(source: string): MarkdownSegment[] {
+  const segments: MarkdownSegment[] = [];
+  let cursor = 0;
+
+  for (const match of source.matchAll(codeTabsBlockPattern)) {
+    const start = match.index ?? 0;
+    const markdown = source.slice(cursor, start);
+
+    if (markdown.trim()) {
+      segments.push({
+        type: "markdown",
+        content: markdown,
+      });
+    }
+
+    const tabs = parseCodeTabs(match[1]);
+
+    if (tabs.length) {
+      segments.push({
+        type: "code-tabs",
+        tabs,
+      });
+    } else {
+      segments.push({
+        type: "markdown",
+        content: match[0],
+      });
+    }
+
+    cursor = start + match[0].length;
+  }
+
+  const remainingMarkdown = source.slice(cursor);
+
+  if (remainingMarkdown.trim() || !segments.length) {
+    segments.push({
+      type: "markdown",
+      content: remainingMarkdown,
+    });
+  }
+
+  return segments;
+}
+
+function CodeTabs({ tabs }: { tabs: CodeTab[] }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeTab = tabs[activeIndex] ?? tabs[0];
+
+  if (!activeTab) {
+    return null;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-[#d8dee6] bg-[#fbfcfd]">
+      <div className="flex min-h-10 gap-1 overflow-x-auto border-b border-[#d8dee6] bg-[#f0f3f6] px-2 pt-2">
+        {tabs.map((tab, index) => {
+          const isActive = tab === activeTab;
+
+          return (
+            <button
+              key={`${tab.title}-${index}`}
+              type="button"
+              aria-current={isActive ? "true" : undefined}
+              onClick={() => setActiveIndex(index)}
+              className={`rounded-t-md px-3 py-1.5 text-xs font-semibold transition ${
+                isActive
+                  ? "bg-[#fbfcfd] text-[#171a20]"
+                  : "text-[#526071] hover:bg-white/60 hover:text-[#24706f]"
+              }`}
+            >
+              {tab.title}
+            </button>
+          );
+        })}
+      </div>
+      <SyntaxHighlighter
+        language={activeTab.language}
+        PreTag="div"
+        customStyle={{
+          margin: 0,
+          background: "#fbfcfd",
+          padding: "16px",
+          fontSize: "13px",
+          lineHeight: "1.7",
+        }}
+        codeTagProps={{
+          style: {
+            fontFamily:
+              "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          },
+        }}
+        style={oneLight}
+        wrapLongLines
+      >
+        {activeTab.code}
+      </SyntaxHighlighter>
+    </div>
+  );
+}
+
+function MarkdownRenderer({ source }: MarkdownContentProps) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkBreaks]}
@@ -306,9 +336,8 @@ function MarkdownBlock({ source }: MarkdownContentProps) {
           />
         ),
         code: CodeBlock,
-        p: (props) => (
-          <p {...props} className="whitespace-pre-wrap leading-7" />
-        ),
+        img: MarkdownImage,
+        pre: PreBlock,
         h1: (props) => (
           <h1 {...props} className="text-3xl font-bold leading-tight" />
         ),
@@ -344,51 +373,16 @@ function MarkdownBlock({ source }: MarkdownContentProps) {
   );
 }
 
-function MarkdownTabs({ tabs }: { tabs: MarkdownTab[] }) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const activeTab = tabs[activeIndex] ?? tabs[0];
-
-  return (
-    <div className="overflow-hidden rounded-lg border border-[#d8dee6] bg-white">
-      <div className="flex flex-wrap gap-1 border-b border-[#d8dee6] bg-[#f0f3f6] p-2">
-        {tabs.map((tab, index) => {
-          const isActive = index === activeIndex;
-
-          return (
-            <button
-              key={`${tab.title}-${index}`}
-              type="button"
-              onClick={() => setActiveIndex(index)}
-              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                isActive
-                  ? "bg-[#24706f] text-white"
-                  : "text-[#3f4754] hover:bg-white"
-              }`}
-            >
-              {tab.title}
-            </button>
-          );
-        })}
-      </div>
-      <div className="p-4">
-        <div className="space-y-5 text-sm leading-7 text-[#3f4754]">
-          <MarkdownContent source={activeTab.content} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function MarkdownContent({ source }: MarkdownContentProps) {
-  const segments = parseTabbedMarkdown(source);
+  const segments = parseMarkdownSegments(source);
 
   return (
     <>
       {segments.map((segment, index) =>
-        segment.type === "tabs" ? (
-          <MarkdownTabs key={index} tabs={segment.tabs} />
+        segment.type === "code-tabs" ? (
+          <CodeTabs key={`code-tabs-${index}`} tabs={segment.tabs} />
         ) : (
-          <MarkdownBlock key={index} source={segment.content} />
+          <MarkdownRenderer key={`markdown-${index}`} source={segment.content} />
         ),
       )}
     </>
