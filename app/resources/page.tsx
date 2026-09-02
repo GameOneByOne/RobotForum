@@ -4,7 +4,7 @@ import { ContentCard } from "@/components/content-card";
 import { SiteHeader } from "@/components/site-header";
 import { getResources } from "@/lib/platform/queries";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function ResourcesPage() {
   const resources = await getResources();

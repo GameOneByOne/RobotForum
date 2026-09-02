@@ -14,7 +14,7 @@ type DiscussPageProps = {
 
 const allPostsLabel = "全部帖子";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function DiscussPage({ searchParams }: DiscussPageProps) {
   const isSupabaseConfigured = hasSupabaseEnv();

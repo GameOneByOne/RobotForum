@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ContentCard } from "@/components/content-card";
 import { PostCard } from "@/components/post-card";
 import { SiteHeader } from "@/components/site-header";
+import { VisitorStatsPanel } from "@/components/visitor-stats-panel";
 import { getForumPosts } from "@/lib/forum/posts";
 import {
   getKnowledgeItems,
@@ -10,7 +11,7 @@ import {
   getResources,
 } from "@/lib/platform/queries";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 function EmptyState({ label }: { label: string }) {
   return (
@@ -44,10 +45,10 @@ function SectionHeader({
 
 export default async function Home() {
   const [projects, knowledgeItems, resources, discussions] = await Promise.all([
-    getProjects(),
-    getKnowledgeItems(),
-    getResources(),
-    getForumPosts("全部帖子"),
+    getProjects(3),
+    getKnowledgeItems(3),
+    getResources(3),
+    getForumPosts("全部帖子", 3),
   ]);
 
   return (
@@ -68,11 +69,13 @@ export default async function Home() {
         </div>
       </section>
 
+      <VisitorStatsPanel />
+
       <div className="mx-auto w-[80vw] max-w-none space-y-10 px-5 py-10">
         <section>
           <SectionHeader eyebrow="Projects" title="项目展示" href="/projects" />
           <div className="mt-4 grid gap-4 md:grid-cols-3">
-            {projects.slice(0, 3).map((project) => (
+            {projects.map((project) => (
               <ContentCard
                 key={project.slug}
                 title={project.title}
@@ -88,7 +91,7 @@ export default async function Home() {
         <section>
           <SectionHeader eyebrow="Knowledge" title="知识库" href="/knowledge" />
           <div className="mt-4 grid gap-4 md:grid-cols-3">
-            {knowledgeItems.slice(0, 3).map((item) => (
+            {knowledgeItems.map((item) => (
               <ContentCard
                 key={item.slug}
                 title={item.title}
@@ -107,7 +110,7 @@ export default async function Home() {
         <section>
           <SectionHeader eyebrow="Discuss" title="最新讨论" href="/discuss" />
           <div className="mt-4 grid gap-4 md:grid-cols-3">
-            {discussions.slice(0, 3).map((post) => (
+            {discussions.map((post) => (
               <PostCard key={post.slug} post={post} />
             ))}
           </div>
@@ -121,7 +124,7 @@ export default async function Home() {
             href="/resources"
           />
           <div className="mt-4 grid gap-4 md:grid-cols-3">
-            {resources.slice(0, 3).map((resource) => (
+            {resources.map((resource) => (
               <ContentCard
                 key={resource.slug}
                 title={resource.title}

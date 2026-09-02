@@ -13,7 +13,7 @@ type KnowledgeDetailPageProps = {
   }>;
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export async function generateMetadata({ params }: KnowledgeDetailPageProps) {
   const { slug } = await params;

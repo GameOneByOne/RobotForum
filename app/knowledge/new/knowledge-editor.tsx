@@ -38,20 +38,14 @@ type DropIndicatorState = {
 } | null;
 
 type CloudinaryUploadResponse = {
-  secure_url?: string;
-  error?: {
-    message?: string;
-  };
+  error?: string;
+  url?: string;
 };
 
 type SaveKnowledgeResponse = {
   error?: string;
   slug?: string;
 };
-
-const cloudinaryCloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const cloudinaryUploadPreset =
-  process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 const firstSectionId = "section-root";
 
@@ -209,12 +203,114 @@ function normalizeTag(value: string) {
   return value.trim().replace(/\s+/g, " ");
 }
 
+function isImageFile(file: File) {
+  return (
+    file.type.startsWith("image/") ||
+    /\.(apng|avif|bmp|gif|heic|heif|ico|jpe?g|png|svg|tiff?|webp)$/i.test(
+      file.name,
+    )
+  );
+}
+
 function imageFilesFromList(files: FileList | File[]) {
-  return Array.from(files).filter((file) => file.type.startsWith("image/"));
+  return Array.from(files).filter(isImageFile);
+}
+
+function imageFilesFromDataTransfer(dataTransfer: DataTransfer) {
+  const itemFiles = Array.from(dataTransfer.items)
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file));
+  const files = itemFiles.length ? itemFiles : Array.from(dataTransfer.files);
+
+  return imageFilesFromList(files);
 }
 
 function imageAltText(fileName: string) {
   return fileName.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || "image";
+}
+
+function isHttpUrl(value: string) {
+  return /^https?:\/\//i.test(value.trim());
+}
+
+function isLikelyImageUrl(value: string) {
+  const url = value.trim();
+
+  return (
+    isHttpUrl(url) &&
+    (/\.(apng|avif|gif|jpe?g|png|svg|webp)(\?.*)?$/i.test(url) ||
+      /\/image\/upload\//i.test(url))
+  );
+}
+
+function imageMarkdownFromUrl(url: string) {
+  const cleanUrl = optimizeCloudinaryImageUrl(url.trim());
+  let altText = "image";
+
+  try {
+    const parsedUrl = new URL(cleanUrl);
+    const fileName = decodeURIComponent(
+      parsedUrl.pathname.split("/").filter(Boolean).at(-1) ?? "",
+    );
+
+    altText = imageAltText(fileName);
+  } catch {
+    altText = "image";
+  }
+
+  return `![${altText}|100|block](${cleanUrl})`;
+}
+
+function optimizeCloudinaryImageUrl(url: string) {
+  if (!url.includes("/image/upload/") || /\/image\/upload\/[^/]*f_auto/.test(url)) {
+    return url;
+  }
+
+  return url.replace(
+    "/image/upload/",
+    "/image/upload/f_auto,q_auto,w_1600,c_limit/",
+  );
+}
+
+function imageUrlFromHtml(html: string) {
+  const document = new DOMParser().parseFromString(html, "text/html");
+  const source =
+    document.querySelector("img")?.getAttribute("src") ??
+    document.querySelector("source")?.getAttribute("srcset")?.split(/\s+/)[0];
+
+  return source && isLikelyImageUrl(source) ? source : "";
+}
+
+function droppedImageMarkdown(dataTransfer: DataTransfer) {
+  const uriList = dataTransfer
+    .getData("text/uri-list")
+    .split(/\r?\n/)
+    .find((line) => line && !line.startsWith("#"));
+
+  if (uriList && isLikelyImageUrl(uriList)) {
+    return imageMarkdownFromUrl(uriList);
+  }
+
+  const plainText = dataTransfer.getData("text/plain");
+
+  if (plainText && isLikelyImageUrl(plainText)) {
+    return imageMarkdownFromUrl(plainText);
+  }
+
+  const htmlImageUrl = imageUrlFromHtml(dataTransfer.getData("text/html"));
+
+  return htmlImageUrl ? imageMarkdownFromUrl(htmlImageUrl) : "";
+}
+
+function hasImageDropPayload(dataTransfer: DataTransfer) {
+  if (imageFilesFromDataTransfer(dataTransfer).length) {
+    return true;
+  }
+
+  return Array.from(dataTransfer.types).some((type) =>
+    ["text/uri-list", "text/html"].includes(type),
+  );
 }
 
 export function KnowledgeEditor({
@@ -464,6 +560,40 @@ export function KnowledgeEditor({
     restoreTextareaState(scrollTop, scrollLeft, nextCursor, nextCursor);
   }
 
+  function insertTextAtRange(
+    sectionId: string,
+    text: string,
+    selectionStart: number,
+    selectionEnd: number,
+    scrollTop: number,
+    scrollLeft: number,
+  ) {
+    if (!text) {
+      return;
+    }
+
+    let cursor = selectionStart + text.length;
+
+    setSections((current) =>
+      current.map((section) => {
+        if (section.id !== sectionId) {
+          return section;
+        }
+
+        const start = Math.min(selectionStart, section.content.length);
+        const end = Math.min(Math.max(selectionEnd, start), section.content.length);
+
+        cursor = start + text.length;
+
+        return {
+          ...section,
+          content: section.content.slice(0, start) + text + section.content.slice(end),
+        };
+      }),
+    );
+    restoreTextareaState(scrollTop, scrollLeft, cursor, cursor);
+  }
+
   async function saveInPlace() {
     const textarea = textareaRef.current;
     const form = textarea?.form;
@@ -506,34 +636,27 @@ export function KnowledgeEditor({
   }
 
   async function uploadImage(file: File) {
-    if (!cloudinaryCloudName || !cloudinaryUploadPreset) {
-      throw new Error("Cloudinary 图床未配置");
-    }
-
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", cloudinaryUploadPreset);
 
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/image/upload`,
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
+    const response = await fetch("/api/uploads/image", {
+      method: "POST",
+      body: formData,
+    });
     const result = (await response.json()) as CloudinaryUploadResponse;
 
-    if (!response.ok || !result.secure_url) {
-      throw new Error(result.error?.message || "图片上传失败");
+    if (!response.ok || !result.url) {
+      throw new Error(result.error || "图片上传失败");
     }
 
-    return result.secure_url;
+    return result.url;
   }
 
   async function uploadAndInsertImages(
     files: File[],
     selectionStart: number,
     selectionEnd: number,
+    sectionId = activeSection.id,
   ) {
     const imageFiles = imageFilesFromList(files);
 
@@ -554,14 +677,15 @@ export function KnowledgeEditor({
       const textarea = textareaRef.current;
       const scrollTop = textarea?.scrollTop ?? 0;
       const scrollLeft = textarea?.scrollLeft ?? 0;
-      const nextContent =
-        activeSection.content.slice(0, selectionStart) +
-        insertion +
-        activeSection.content.slice(selectionEnd);
-      const cursor = selectionStart + insertion.length;
 
-      updateActiveSection({ content: nextContent });
-      restoreTextareaState(scrollTop, scrollLeft, cursor, cursor);
+      insertTextAtRange(
+        sectionId,
+        insertion,
+        selectionStart,
+        selectionEnd,
+        scrollTop,
+        scrollLeft,
+      );
       setUploadStatus("图片已上传");
       window.setTimeout(() => setUploadStatus(""), 1600);
     } catch (error) {
@@ -570,7 +694,7 @@ export function KnowledgeEditor({
   }
 
   function handleImagePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
-    const files = imageFilesFromList(event.clipboardData.files);
+    const files = imageFilesFromDataTransfer(event.clipboardData);
 
     if (!files.length) {
       return;
@@ -581,23 +705,50 @@ export function KnowledgeEditor({
       files,
       event.currentTarget.selectionStart,
       event.currentTarget.selectionEnd,
+      activeSection.id,
     );
   }
 
   function handleImageDrop(event: DragEvent<HTMLTextAreaElement>) {
-    const files = imageFilesFromList(event.dataTransfer.files);
+    const files = imageFilesFromDataTransfer(event.dataTransfer);
 
-    if (!files.length) {
+    if (!files.length && !hasImageDropPayload(event.dataTransfer)) {
       return;
     }
 
     event.preventDefault();
-    event.currentTarget.focus();
-    void uploadAndInsertImages(
-      files,
-      event.currentTarget.selectionStart,
-      event.currentTarget.selectionEnd,
+    const textarea = event.currentTarget;
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+    const scrollTop = textarea.scrollTop;
+    const scrollLeft = textarea.scrollLeft;
+    const sectionId = activeSection.id;
+
+    textarea.focus();
+
+    if (files.length) {
+      void uploadAndInsertImages(files, selectionStart, selectionEnd, sectionId);
+      return;
+    }
+
+    const markdown = droppedImageMarkdown(event.dataTransfer);
+
+    if (!markdown) {
+      setUploadStatus("未识别到可插入的图片");
+      window.setTimeout(() => setUploadStatus(""), 1600);
+      return;
+    }
+
+    insertTextAtRange(
+      sectionId,
+      `\n${markdown}\n`,
+      selectionStart,
+      selectionEnd,
+      scrollTop,
+      scrollLeft,
     );
+    setUploadStatus("图片已插入");
+    window.setTimeout(() => setUploadStatus(""), 1600);
   }
 
   function handleEditorKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -911,7 +1062,13 @@ export function KnowledgeEditor({
                   updateActiveSection({ content: event.target.value });
                   window.requestAnimationFrame(syncPreviewScroll);
                 }}
-                onDragOver={(event) => event.preventDefault()}
+                onDragOver={(event) => {
+                  if (hasImageDropPayload(event.dataTransfer)) {
+                    event.dataTransfer.dropEffect = "copy";
+                  }
+
+                  event.preventDefault();
+                }}
                 onDrop={handleImageDrop}
                 onPaste={handleImagePaste}
                 onScroll={syncPreviewScroll}
@@ -923,9 +1080,7 @@ export function KnowledgeEditor({
                 <span>
                   {saveStatus ||
                     uploadStatus ||
-                    (!cloudinaryCloudName || !cloudinaryUploadPreset
-                      ? "图床未配置"
-                      : `${wordCount} words`)}
+                    `${wordCount} words`}
                 </span>
               </div>
             </div>

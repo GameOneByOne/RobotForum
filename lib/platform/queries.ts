@@ -1,10 +1,12 @@
+import { cache } from "react";
+
 import type {
   KnowledgeItem,
   ProjectCard,
   ResourceItem,
 } from "@/lib/platform-data";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 type TagRelation = {
   tags?: {
@@ -28,7 +30,7 @@ type KnowledgeRow = {
   slug: string;
   title: string;
   summary: string | null;
-  content: string | null;
+  content?: string | null;
   type: string | null;
   difficulty: string | null;
   view_count: number | null;
@@ -91,6 +93,10 @@ function searchText(values: string[], query: string): boolean {
   return values.join(" ").toLowerCase().includes(keyword);
 }
 
+function searchableKeyword(query: string) {
+  return query.trim().replace(/[%,]/g, " ").replace(/\s+/g, " ");
+}
+
 function mapProject(row: ProjectRow): ProjectCard {
   return {
     slug: row.slug,
@@ -137,20 +143,26 @@ function mapResource(row: ResourceRow): ResourceItem {
   };
 }
 
-export async function getProjects(): Promise<ProjectCard[]> {
+export async function getProjects(limit?: number): Promise<ProjectCard[]> {
   if (!hasSupabaseEnv()) {
     return [];
   }
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const supabase = createPublicClient();
+    let query = supabase
       .from("projects")
       .select(
         "slug,title,description,author_name,github_url,view_count,like_count,project_tags(tags(name))",
       )
       .eq("is_published", true)
       .order("created_at", { ascending: false });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
 
     if (error || !data) {
       return [];
@@ -162,20 +174,26 @@ export async function getProjects(): Promise<ProjectCard[]> {
   }
 }
 
-export async function getKnowledgeItems(): Promise<KnowledgeItem[]> {
+export async function getKnowledgeItems(limit?: number): Promise<KnowledgeItem[]> {
   if (!hasSupabaseEnv()) {
     return [];
   }
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const supabase = createPublicClient();
+    let query = supabase
       .from("knowledge")
       .select(
-        "id,slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+        "id,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
       )
       .eq("status", "published")
       .order("created_at", { ascending: false });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
 
     if (error || !data) {
       return [];
@@ -187,7 +205,7 @@ export async function getKnowledgeItems(): Promise<KnowledgeItem[]> {
   }
 }
 
-export async function getKnowledgeItemBySlug(
+export const getKnowledgeItemBySlug = cache(async function getKnowledgeItemBySlug(
   slug: string,
 ): Promise<KnowledgeItem | undefined> {
   if (!hasSupabaseEnv()) {
@@ -208,7 +226,7 @@ export async function getKnowledgeItemBySlug(
   );
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("knowledge")
       .select(
@@ -227,22 +245,28 @@ export async function getKnowledgeItemBySlug(
   } catch {
     return undefined;
   }
-}
+});
 
-export async function getResources(): Promise<ResourceItem[]> {
+export async function getResources(limit?: number): Promise<ResourceItem[]> {
   if (!hasSupabaseEnv()) {
     return [];
   }
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const supabase = createPublicClient();
+    let query = supabase
       .from("resources")
       .select(
         "slug,title,description,type,url,view_count,like_count,resource_tags(tags(name))",
       )
       .eq("is_published", true)
       .order("created_at", { ascending: false });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
 
     if (error || !data) {
       return [];
@@ -259,11 +283,59 @@ export async function searchPlatformContent(query: string): Promise<{
   knowledge: KnowledgeItem[];
   resources: ResourceItem[];
 }> {
-  const [projects, knowledge, resources] = await Promise.all([
-    getProjects(),
-    getKnowledgeItems(),
-    getResources(),
+  const keyword = searchableKeyword(query);
+
+  if (!keyword || !hasSupabaseEnv()) {
+    return {
+      projects: [],
+      knowledge: [],
+      resources: [],
+    };
+  }
+
+  const supabase = createPublicClient();
+  const pattern = `%${keyword}%`;
+  const [projectsResult, knowledgeResult, resourcesResult] = await Promise.all([
+    supabase
+      .from("projects")
+      .select(
+        "slug,title,description,author_name,github_url,view_count,like_count,project_tags(tags(name))",
+      )
+      .eq("is_published", true)
+      .or(
+        `title.ilike.${pattern},description.ilike.${pattern},author_name.ilike.${pattern}`,
+      )
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("knowledge")
+      .select(
+        "id,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+      )
+      .eq("status", "published")
+      .or(`title.ilike.${pattern},summary.ilike.${pattern}`)
+      .order("created_at", { ascending: false })
+      .limit(20),
+    supabase
+      .from("resources")
+      .select(
+        "slug,title,description,type,url,view_count,like_count,resource_tags(tags(name))",
+      )
+      .eq("is_published", true)
+      .or(`title.ilike.${pattern},description.ilike.${pattern},url.ilike.${pattern}`)
+      .order("created_at", { ascending: false })
+      .limit(20),
   ]);
+
+  const projects = projectsResult.error
+    ? []
+    : (projectsResult.data ?? []).map((row) => mapProject(row as ProjectRow));
+  const knowledge = knowledgeResult.error
+    ? []
+    : (knowledgeResult.data ?? []).map((row) => mapKnowledge(row as KnowledgeRow));
+  const resources = resourcesResult.error
+    ? []
+    : (resourcesResult.data ?? []).map((row) => mapResource(row as ResourceRow));
 
   return {
     projects: projects.filter((project) =>

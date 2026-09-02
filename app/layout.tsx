@@ -10,7 +10,7 @@ const inter = Inter({
 const notoSansSc = Noto_Sans_SC({
   subsets: ["latin"],
   variable: "--font-noto-sans-sc",
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600"],
 });
 
 const jetBrainsMono = JetBrains_Mono({

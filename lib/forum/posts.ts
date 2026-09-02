@@ -1,6 +1,8 @@
+import { cache } from "react";
+
 import { navItems, type ForumPost } from "@/app/forum-data";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 type ForumPostRow = {
   slug: string;
@@ -82,23 +84,44 @@ function filterBySearch(posts: ForumPost[], query: string): ForumPost[] {
   });
 }
 
-export async function getForumPosts(category: string): Promise<ForumPost[]> {
+function searchText(values: string[], query: string): boolean {
+  const keyword = query.trim().toLowerCase();
+
+  if (!keyword) {
+    return true;
+  }
+
+  return values.join(" ").toLowerCase().includes(keyword);
+}
+
+function searchableKeyword(query: string) {
+  return query.trim().replace(/[%,]/g, " ").replace(/\s+/g, " ");
+}
+
+export async function getForumPosts(
+  category: string,
+  limit?: number,
+): Promise<ForumPost[]> {
   if (!hasSupabaseEnv()) {
     return [];
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     let query = supabase
       .from("forum_posts")
       .select(
-        "slug,title,excerpt,content,author_name,tags,view_count,like_count,reply_count,published_at",
+        "slug,title,excerpt,author_name,tags,view_count,like_count,reply_count,published_at",
       )
       .eq("is_published", true)
       .order("published_at", { ascending: false });
 
     if (category !== allPostsLabel) {
       query = query.contains("tags", [category]);
+    }
+
+    if (limit) {
+      query = query.limit(limit);
     }
 
     const { data, error } = await query;
@@ -116,11 +139,44 @@ export async function getForumPosts(category: string): Promise<ForumPost[]> {
 }
 
 export async function searchForumPosts(query: string): Promise<ForumPost[]> {
-  const posts = await getForumPosts(allPostsLabel);
-  return filterBySearch(posts, query);
+  const keyword = searchableKeyword(query);
+
+  if (!keyword || !hasSupabaseEnv()) {
+    return [];
+  }
+
+  try {
+    const supabase = createPublicClient();
+    const pattern = `%${keyword}%`;
+    const { data, error } = await supabase
+      .from("forum_posts")
+      .select(
+        "slug,title,excerpt,author_name,tags,view_count,like_count,reply_count,published_at",
+      )
+      .eq("is_published", true)
+      .or(`title.ilike.${pattern},excerpt.ilike.${pattern},author_name.ilike.${pattern}`)
+      .order("published_at", { ascending: false })
+      .limit(30);
+
+    if (error || !data) {
+      return [];
+    }
+
+    return data
+      .filter((row) => !(row as ForumPostRow).tags?.includes(deletedPostTag))
+      .map((row) => mapPost(row as ForumPostRow))
+      .filter((post) =>
+        searchText(
+          [post.title, post.excerpt, post.category, post.author, ...post.tags],
+          keyword,
+        ),
+      );
+  } catch {
+    return [];
+  }
 }
 
-export async function getForumPostBySlug(
+export const getForumPostBySlug = cache(async function getForumPostBySlug(
   slug: string,
 ): Promise<ForumPost | undefined> {
   if (!hasSupabaseEnv()) {
@@ -128,7 +184,7 @@ export async function getForumPostBySlug(
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
       .from("forum_posts")
       .select(
@@ -150,4 +206,4 @@ export async function getForumPostBySlug(
   } catch {
     return undefined;
   }
-}
+});
