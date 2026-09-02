@@ -368,7 +368,7 @@ function MarkdownRenderer({ source }: MarkdownContentProps) {
         ),
       }}
     >
-      {preserveSingleLineBreaks(source)}
+      {source}
     </ReactMarkdown>
   );
 }
