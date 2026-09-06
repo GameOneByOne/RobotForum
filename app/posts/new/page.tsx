@@ -3,13 +3,15 @@ import Link from "next/link";
 import { navItems } from "@/app/forum-data";
 import { MarkdownEditor } from "@/app/posts/new/markdown-editor";
 import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/auth/session";
 import { publishPost } from "@/lib/forum/actions";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 const categoryItems = navItems.filter((item) => item !== "全部帖子");
 
-export default function NewPostPage() {
+export default async function NewPostPage() {
   const isSupabaseConfigured = hasSupabaseEnv();
+  const user = await getCurrentUser();
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
@@ -38,6 +40,15 @@ export default function NewPostPage() {
         action={publishPost}
         className="mx-auto w-[80vw] max-w-none space-y-5 px-5 py-6"
       >
+        {!user && (
+          <div className="rounded-lg border border-[#d8dee6] bg-white p-5 text-sm text-[#667085]">
+            发布帖子需要先登录。
+            <Link className="ml-2 font-semibold text-[#24706f]" href="/login">
+              去登录
+            </Link>
+          </div>
+        )}
+
         {!isSupabaseConfigured && (
           <div className="rounded-lg border border-[#d8dee6] bg-white p-4 text-sm text-[#667085]">
             Supabase 环境变量未配置，发布按钮会在提交时失败；配置完成后可直接写入数据库。
@@ -76,7 +87,8 @@ export default function NewPostPage() {
         <div className="sticky bottom-0 flex justify-end border-t border-[#d8dee6] bg-[#f4f6f8]/95 py-4">
           <button
             type="submit"
-            className="rounded-md bg-[#24706f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+            disabled={!user}
+            className="rounded-md bg-[#24706f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1f6867] disabled:cursor-not-allowed disabled:bg-[#98a2b3]"
           >
             发布帖子
           </button>

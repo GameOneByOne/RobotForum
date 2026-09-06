@@ -11,6 +11,7 @@ import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
 type MarkdownContentProps = {
+  size?: "normal" | "large";
   source: string;
 };
 
@@ -78,10 +79,16 @@ function parseImageOptions(alt = ""): ImageOptions {
   };
 }
 
-function CodeBlock({ className, children, ...props }: CodeProps) {
+function CodeBlock({
+  className,
+  children,
+  size = "normal",
+  ...props
+}: CodeProps & Pick<MarkdownContentProps, "size">) {
   const match = /language-(\w+)/.exec(className ?? "");
   const language = match?.[1];
   const code = String(children).replace(/\n$/, "");
+  const isLarge = size === "large";
 
   if (language) {
     return (
@@ -98,7 +105,7 @@ function CodeBlock({ className, children, ...props }: CodeProps) {
             margin: 0,
             background: "#fbfcfd",
             padding: "16px",
-            fontSize: "13px",
+            fontSize: isLarge ? "18px" : "13px",
             lineHeight: "1.7",
           }}
           codeTagProps={{
@@ -121,8 +128,12 @@ function CodeBlock({ className, children, ...props }: CodeProps) {
       {...props}
       className={
         hasMultilineContent(children)
-          ? "block whitespace-pre-wrap font-mono text-sm leading-7 text-[#171a20]"
-          : "rounded bg-[#eef2f6] px-1.5 py-0.5 font-mono text-sm text-[#171a20]"
+          ? `block whitespace-pre-wrap font-mono text-[#171a20] ${
+              isLarge ? "text-lg leading-8" : "text-sm leading-7"
+            }`
+          : `rounded bg-[#eef2f6] px-1.5 py-0.5 font-mono text-[#171a20] ${
+              isLarge ? "text-lg" : "text-sm"
+            }`
       }
     >
       {children}
@@ -259,9 +270,16 @@ function parseMarkdownSegments(source: string): MarkdownSegment[] {
   return segments;
 }
 
-function CodeTabs({ tabs }: { tabs: CodeTab[] }) {
+function CodeTabs({
+  size = "normal",
+  tabs,
+}: {
+  size?: MarkdownContentProps["size"];
+  tabs: CodeTab[];
+}) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeTab = tabs[activeIndex] ?? tabs[0];
+  const isLarge = size === "large";
 
   if (!activeTab) {
     return null;
@@ -279,7 +297,9 @@ function CodeTabs({ tabs }: { tabs: CodeTab[] }) {
               type="button"
               aria-current={isActive ? "true" : undefined}
               onClick={() => setActiveIndex(index)}
-              className={`rounded-t-md px-3 py-1.5 text-xs font-semibold transition ${
+              className={`rounded-t-md px-3 py-1.5 font-semibold transition ${
+                isLarge ? "text-base" : "text-xs"
+              } ${
                 isActive
                   ? "bg-[#fbfcfd] text-[#171a20]"
                   : "text-[#526071] hover:bg-white/60 hover:text-[#24706f]"
@@ -297,7 +317,7 @@ function CodeTabs({ tabs }: { tabs: CodeTab[] }) {
           margin: 0,
           background: "#fbfcfd",
           padding: "16px",
-          fontSize: "13px",
+          fontSize: isLarge ? "18px" : "13px",
           lineHeight: "1.7",
         }}
         codeTagProps={{
@@ -315,7 +335,9 @@ function CodeTabs({ tabs }: { tabs: CodeTab[] }) {
   );
 }
 
-function MarkdownRenderer({ source }: MarkdownContentProps) {
+function MarkdownRenderer({ size = "normal", source }: MarkdownContentProps) {
+  const isLarge = size === "large";
+
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkBreaks]}
@@ -335,17 +357,32 @@ function MarkdownRenderer({ source }: MarkdownContentProps) {
             className="border-l-4 border-[#b7cfcd] pl-4 text-[#526071]"
           />
         ),
-        code: CodeBlock,
+        code: (props) => <CodeBlock {...props} size={size} />,
         img: MarkdownImage,
         pre: PreBlock,
         h1: (props) => (
-          <h1 {...props} className="text-3xl font-bold leading-tight" />
+          <h1
+            {...props}
+            className={`font-bold leading-tight ${
+              isLarge ? "text-5xl" : "text-3xl"
+            }`}
+          />
         ),
         h2: (props) => (
-          <h2 {...props} className="text-2xl font-bold leading-tight" />
+          <h2
+            {...props}
+            className={`font-bold leading-tight ${
+              isLarge ? "text-4xl" : "text-2xl"
+            }`}
+          />
         ),
         h3: (props) => (
-          <h3 {...props} className="text-xl font-semibold leading-tight" />
+          <h3
+            {...props}
+            className={`font-semibold leading-tight ${
+              isLarge ? "text-3xl" : "text-xl"
+            }`}
+          />
         ),
         ol: (props) => <ol {...props} className="list-decimal pl-6" />,
         ul: (props) => <ul {...props} className="list-disc pl-6" />,
@@ -353,7 +390,9 @@ function MarkdownRenderer({ source }: MarkdownContentProps) {
           <div className="overflow-x-auto">
             <table
               {...props}
-              className="w-full min-w-[520px] border-collapse text-left text-sm"
+              className={`w-full min-w-[520px] border-collapse text-left ${
+                isLarge ? "text-lg" : "text-sm"
+              }`}
             />
           </div>
         ),
@@ -373,16 +412,20 @@ function MarkdownRenderer({ source }: MarkdownContentProps) {
   );
 }
 
-export function MarkdownContent({ source }: MarkdownContentProps) {
+export function MarkdownContent({ size = "normal", source }: MarkdownContentProps) {
   const segments = parseMarkdownSegments(source);
 
   return (
     <>
       {segments.map((segment, index) =>
         segment.type === "code-tabs" ? (
-          <CodeTabs key={`code-tabs-${index}`} tabs={segment.tabs} />
+          <CodeTabs key={`code-tabs-${index}`} size={size} tabs={segment.tabs} />
         ) : (
-          <MarkdownRenderer key={`markdown-${index}`} source={segment.content} />
+          <MarkdownRenderer
+            key={`markdown-${index}`}
+            size={size}
+            source={segment.content}
+          />
         ),
       )}
     </>

@@ -98,32 +98,25 @@ export function VisitorStatsPanel() {
   }, []);
 
   return (
-    <section className="border-b border-[#d8dee6] bg-[#fbfcfd]">
-      <div className="mx-auto grid w-[80vw] max-w-none gap-4 px-5 py-5 md:grid-cols-[1fr_auto_auto] md:items-center">
-        <div>
-          <p className="text-sm font-semibold text-[#24706f]">访客信息</p>
-          <h2 className="mt-1 text-xl font-bold">站点实时访问概览</h2>
-        </div>
-
-        <div className="rounded-lg border border-[#d8dee6] bg-white px-5 py-4">
-          <p className="text-xs font-semibold text-[#667085]">24H 访问人次</p>
-          <p className="mt-1 text-3xl font-bold text-[#171a20]">
-            {stats.visits24h.toLocaleString("zh-CN")}
-          </p>
-        </div>
-
-        <div className="rounded-lg border border-[#d8dee6] bg-white px-5 py-4">
-          <p className="text-xs font-semibold text-[#667085]">当前在线人数</p>
-          <div className="mt-1 flex items-end gap-3">
-            <p className="text-3xl font-bold text-[#171a20]">
-              {stats.onlineVisitors.toLocaleString("zh-CN")}
-            </p>
-            <span className="pb-1 text-xs font-semibold text-[#24706f]">
-              {status}
-            </span>
-          </div>
-        </div>
-      </div>
-    </section>
+    <div
+      aria-label="站点实时访问概览"
+      className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs font-medium text-[#667085]"
+    >
+      <span className="whitespace-nowrap">
+        24H访问人数{" "}
+        <strong className="font-bold text-[#1f8a70]">
+          {stats.visits24h.toLocaleString("zh-CN")}
+        </strong>
+      </span>
+      <span className="whitespace-nowrap">
+        当前在线人数{" "}
+        <strong className="font-bold text-[#d04f1f]">
+          {stats.onlineVisitors.toLocaleString("zh-CN")}
+        </strong>
+      </span>
+      <span className="whitespace-nowrap text-[11px] font-semibold text-[#24706f]">
+        {status}
+      </span>
+    </div>
   );
 }

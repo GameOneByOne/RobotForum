@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { CommentSection } from "@/components/comment-section";
 import { MarkdownContent } from "@/components/markdown-content";
 import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/auth/session";
+import { getComments } from "@/lib/comments";
 import { deletePost } from "@/lib/forum/actions";
 import { getForumPostBySlug } from "@/lib/forum/posts";
 
@@ -29,11 +32,17 @@ export async function generateMetadata({
 
 export default async function PostPage({ params }: PostPageProps) {
   const { slug } = await params;
-  const post = await getForumPostBySlug(slug);
+  const [post, user] = await Promise.all([
+    getForumPostBySlug(slug),
+    getCurrentUser(),
+  ]);
 
   if (!post) {
     notFound();
   }
+
+  const comments = await getComments("post", post.slug);
+  const canManagePost = Boolean(user && post.ownerId === user.id);
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
@@ -47,23 +56,25 @@ export default async function PostPage({ params }: PostPageProps) {
             >
               返回讨论列表
             </Link>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href={`/posts/${post.slug}/edit`}
-                className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
-              >
-                编辑帖子
-              </Link>
-              <form action={deletePost}>
-                <input type="hidden" name="slug" value={post.slug} />
-                <button
-                  type="submit"
-                  className="rounded-md border border-[#d92d20] bg-white px-4 py-2 text-sm font-semibold text-[#d92d20] transition hover:bg-[#fff4f2]"
+            {canManagePost && (
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={`/posts/${post.slug}/edit`}
+                  className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
                 >
-                  删除帖子
-                </button>
-              </form>
-            </div>
+                  编辑帖子
+                </Link>
+                <form action={deletePost}>
+                  <input type="hidden" name="slug" value={post.slug} />
+                  <button
+                    type="submit"
+                    className="rounded-md border border-[#d92d20] bg-white px-4 py-2 text-sm font-semibold text-[#d92d20] transition hover:bg-[#fff4f2]"
+                  >
+                    删除帖子
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
           <p className="mt-5 text-xs font-semibold uppercase text-[#24706f]">
             {post.category}
@@ -94,10 +105,16 @@ export default async function PostPage({ params }: PostPageProps) {
             ))}
           </div>
 
-          <div className="mt-6 space-y-5 text-base leading-8 text-[#3f4754]">
-            <MarkdownContent source={post.content.join("\n\n")} />
+          <div className="mt-6 space-y-6 text-xl leading-10 text-[#3f4754]">
+            <MarkdownContent size="large" source={post.content.join("\n\n")} />
           </div>
         </div>
+
+        <CommentSection
+          comments={comments}
+          targetSlug={post.slug}
+          targetType="post"
+        />
       </article>
     </main>
   );

@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { KnowledgeDetailView } from "@/app/knowledge/[slug]/knowledge-detail-view";
+import { CommentSection } from "@/components/comment-section";
 import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/auth/session";
+import { getComments } from "@/lib/comments";
 import { deleteKnowledge } from "@/lib/knowledge/actions";
 import { parseKnowledgeSections } from "@/lib/knowledge/sections";
 import { getKnowledgeItemBySlug } from "@/lib/platform/queries";
@@ -28,14 +31,19 @@ export default async function KnowledgeDetailPage({
   params,
 }: KnowledgeDetailPageProps) {
   const { slug } = await params;
-  const item = await getKnowledgeItemBySlug(slug);
+  const [item, user] = await Promise.all([
+    getKnowledgeItemBySlug(slug),
+    getCurrentUser(),
+  ]);
 
   if (!item) {
     notFound();
   }
 
+  const comments = await getComments("knowledge", item.slug);
   const sections = parseKnowledgeSections(item.content);
   const encodedSlug = encodeURIComponent(item.slug);
+  const canManageKnowledge = Boolean(user && item.authorId === user.id);
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
@@ -50,9 +58,6 @@ export default async function KnowledgeDetailPage({
           </Link>
           <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-[#24706f]">
-                {item.type} / {item.difficulty}
-              </p>
               <h1 className="mt-2 text-3xl font-bold">{item.title}</h1>
               {item.summary && (
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-[#5b6472]">
@@ -61,23 +66,25 @@ export default async function KnowledgeDetailPage({
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href={`/knowledge/${encodedSlug}/edit`}
-                className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
-              >
-                编辑知识库
-              </Link>
-              <form action={deleteKnowledge}>
-                <input type="hidden" name="slug" value={item.slug} />
-                <button
-                  type="submit"
-                  className="rounded-md border border-[#d92d20] bg-white px-4 py-2 text-sm font-semibold text-[#d92d20] transition hover:bg-[#fff4f2]"
+            {canManageKnowledge && (
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={`/knowledge/${encodedSlug}/edit`}
+                  className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
                 >
-                  删除知识库
-                </button>
-              </form>
-            </div>
+                  编辑知识库
+                </Link>
+                <form action={deleteKnowledge}>
+                  <input type="hidden" name="slug" value={item.slug} />
+                  <button
+                    type="submit"
+                    className="rounded-md border border-[#d92d20] bg-white px-4 py-2 text-sm font-semibold text-[#d92d20] transition hover:bg-[#fff4f2]"
+                  >
+                    删除知识库
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -86,6 +93,14 @@ export default async function KnowledgeDetailPage({
         editHref={`/knowledge/${encodedSlug}/edit`}
         sections={sections}
       />
+
+      <div className="mx-auto w-[80vw] max-w-none px-5 pb-8">
+        <CommentSection
+          comments={comments}
+          targetSlug={item.slug}
+          targetType="knowledge"
+        />
+      </div>
     </main>
   );
 }

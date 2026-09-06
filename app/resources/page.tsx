@@ -2,12 +2,16 @@ import Link from "next/link";
 
 import { ContentCard } from "@/components/content-card";
 import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/auth/session";
 import { getResources } from "@/lib/platform/queries";
 
 export const revalidate = 60;
 
 export default async function ResourcesPage() {
-  const resources = await getResources();
+  const [resources, user] = await Promise.all([
+    getResources(),
+    getCurrentUser(),
+  ]);
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
@@ -21,25 +25,43 @@ export default async function ResourcesPage() {
               开源仓库、论文、书籍、数据集、硬件、工具和课程均从 Supabase resources 表读取。
             </p>
           </div>
-          <Link
-            href="/posts/new"
-            className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
-          >
-            发布帖子
-          </Link>
+          {user ? (
+            <Link
+              href="/resources/new"
+              className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+            >
+              发布资源
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="rounded-md border border-[#cfd6df] px-4 py-2 text-sm font-semibold text-[#3f4754] transition hover:bg-[#f0f3f6]"
+            >
+              登录后发布
+            </Link>
+          )}
         </div>
       </section>
 
       <div className="mx-auto grid w-[80vw] max-w-none gap-4 px-5 py-8 md:grid-cols-3">
         {resources.map((resource) => (
-          <ContentCard
-            key={resource.slug}
-            title={resource.title}
-            description={resource.description}
-            href={resource.url}
-            meta={resource.type}
-            tags={resource.tags}
-          />
+          <div key={resource.slug} className="space-y-2">
+            <ContentCard
+              title={resource.title}
+              description={resource.description}
+              href={`/resources/${encodeURIComponent(resource.slug)}`}
+              meta={resource.type}
+              tags={resource.tags}
+            />
+            {user && resource.creatorId === user.id && (
+              <Link
+                href={`/resources/${encodeURIComponent(resource.slug)}/edit`}
+                className="inline-flex rounded-md border border-[#cfd6df] bg-white px-3 py-1.5 text-xs font-semibold text-[#3f4754] hover:bg-[#f0f3f6]"
+              >
+                编辑资源
+              </Link>
+            )}
+          </div>
         ))}
       </div>
 

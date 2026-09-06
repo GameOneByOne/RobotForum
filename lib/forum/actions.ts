@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { navItems } from "@/app/forum-data";
+import { displayNameFromEmail, requireCurrentUser } from "@/lib/auth/session";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -64,14 +65,16 @@ export async function publishPost(formData: FormData): Promise<void> {
 
   validatePostInput(title, category, content);
 
+  const user = await requireCurrentUser();
   const slug = createSlug(title);
   const supabase = await createClient();
   const { error } = await supabase.from("forum_posts").insert({
+    owner_id: user.id,
     slug,
     title,
     excerpt: createExcerpt(content),
     content: [content],
-    author_name: "匿名用户",
+    author_name: displayNameFromEmail(user.email),
     tags: [category],
     view_count: 0,
     like_count: 0,
@@ -104,6 +107,7 @@ export async function updatePost(formData: FormData): Promise<void> {
 
   validatePostInput(title, category, content);
 
+  const user = await requireCurrentUser();
   const supabase = await createClient();
   const { error } = await supabase
     .from("forum_posts")
@@ -114,10 +118,24 @@ export async function updatePost(formData: FormData): Promise<void> {
       tags: [category],
       is_published: true,
     })
-    .eq("slug", slug);
+    .select("slug")
+    .eq("slug", slug)
+    .eq("owner_id", user.id)
+    .maybeSingle();
 
   if (error) {
     throw new Error(`更新失败：${error.message}`);
+  }
+
+  const { data } = await supabase
+    .from("forum_posts")
+    .select("slug")
+    .eq("slug", slug)
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
+  if (!data) {
+    throw new Error("更新失败：只能更新自己发布的帖子。");
   }
 
   revalidatePath("/");
@@ -137,11 +155,13 @@ export async function deletePost(formData: FormData): Promise<void> {
     throw new Error("缺少帖子标识，无法删除。");
   }
 
+  const user = await requireCurrentUser();
   const supabase = await createClient();
   const { data: post, error: selectError } = await supabase
     .from("forum_posts")
     .select("tags")
     .eq("slug", slug)
+    .eq("owner_id", user.id)
     .maybeSingle();
 
   if (selectError || !post) {
@@ -155,7 +175,8 @@ export async function deletePost(formData: FormData): Promise<void> {
   const { error } = await supabase
     .from("forum_posts")
     .update({ tags: nextTags })
-    .eq("slug", slug);
+    .eq("slug", slug)
+    .eq("owner_id", user.id);
 
   if (error) {
     throw new Error(`删除失败：${error.message}`);

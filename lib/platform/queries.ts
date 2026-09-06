@@ -15,6 +15,7 @@ type TagRelation = {
 };
 
 type ProjectRow = {
+  owner_id?: string | null;
   slug: string;
   title: string;
   description: string | null;
@@ -27,6 +28,7 @@ type ProjectRow = {
 
 type KnowledgeRow = {
   id: string;
+  author_id?: string | null;
   slug: string;
   title: string;
   summary: string | null;
@@ -39,6 +41,7 @@ type KnowledgeRow = {
 };
 
 type ResourceRow = {
+  creator_id?: string | null;
   slug: string;
   title: string;
   description: string | null;
@@ -99,6 +102,7 @@ function searchableKeyword(query: string) {
 
 function mapProject(row: ProjectRow): ProjectCard {
   return {
+    ownerId: row.owner_id ?? null,
     slug: row.slug,
     title: row.title,
     description: row.description ?? "",
@@ -116,6 +120,7 @@ function mapKnowledge(row: KnowledgeRow): KnowledgeItem {
 
   return {
     id: row.id,
+    authorId: row.author_id ?? null,
     slug: row.slug,
     title: row.title,
     summary: row.summary ?? "",
@@ -132,6 +137,7 @@ function mapResource(row: ResourceRow): ResourceItem {
   const typeKey = row.type as keyof typeof resourceTypeMap;
 
   return {
+    creatorId: row.creator_id ?? null,
     slug: row.slug,
     title: row.title,
     description: row.description ?? "",
@@ -153,7 +159,7 @@ export async function getProjects(limit?: number): Promise<ProjectCard[]> {
     let query = supabase
       .from("projects")
       .select(
-        "slug,title,description,author_name,github_url,view_count,like_count,project_tags(tags(name))",
+        "owner_id,slug,title,description,author_name,github_url,view_count,like_count,project_tags(tags(name))",
       )
       .eq("is_published", true)
       .order("created_at", { ascending: false });
@@ -174,6 +180,30 @@ export async function getProjects(limit?: number): Promise<ProjectCard[]> {
   }
 }
 
+export const getProjectBySlug = cache(async function getProjectBySlug(
+  slug: string,
+): Promise<ProjectCard | undefined> {
+  if (!hasSupabaseEnv()) {
+    return undefined;
+  }
+
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("projects")
+    .select(
+      "owner_id,slug,title,description,author_name,github_url,view_count,like_count,project_tags(tags(name))",
+    )
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error || !data) {
+    return undefined;
+  }
+
+  return mapProject(data as ProjectRow);
+});
+
 export async function getKnowledgeItems(limit?: number): Promise<KnowledgeItem[]> {
   if (!hasSupabaseEnv()) {
     return [];
@@ -184,7 +214,7 @@ export async function getKnowledgeItems(limit?: number): Promise<KnowledgeItem[]
     let query = supabase
       .from("knowledge")
       .select(
-        "id,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+        "id,author_id,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
       )
       .eq("status", "published")
       .order("created_at", { ascending: false });
@@ -230,7 +260,7 @@ export const getKnowledgeItemBySlug = cache(async function getKnowledgeItemBySlu
     const { data, error } = await supabase
       .from("knowledge")
       .select(
-        "id,slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+        "id,author_id,slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
       )
       .in("slug", slugCandidates)
       .eq("status", "published")
@@ -257,7 +287,7 @@ export async function getResources(limit?: number): Promise<ResourceItem[]> {
     let query = supabase
       .from("resources")
       .select(
-        "slug,title,description,type,url,view_count,like_count,resource_tags(tags(name))",
+        "creator_id,slug,title,description,type,url,view_count,like_count,resource_tags(tags(name))",
       )
       .eq("is_published", true)
       .order("created_at", { ascending: false });
@@ -277,6 +307,30 @@ export async function getResources(limit?: number): Promise<ResourceItem[]> {
     return [];
   }
 }
+
+export const getResourceBySlug = cache(async function getResourceBySlug(
+  slug: string,
+): Promise<ResourceItem | undefined> {
+  if (!hasSupabaseEnv()) {
+    return undefined;
+  }
+
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("resources")
+    .select(
+      "creator_id,slug,title,description,type,url,view_count,like_count,resource_tags(tags(name))",
+    )
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error || !data) {
+    return undefined;
+  }
+
+  return mapResource(data as ResourceRow);
+});
 
 export async function searchPlatformContent(query: string): Promise<{
   projects: ProjectCard[];
@@ -299,7 +353,7 @@ export async function searchPlatformContent(query: string): Promise<{
     supabase
       .from("projects")
       .select(
-        "slug,title,description,author_name,github_url,view_count,like_count,project_tags(tags(name))",
+        "owner_id,slug,title,description,author_name,github_url,view_count,like_count,project_tags(tags(name))",
       )
       .eq("is_published", true)
       .or(
@@ -310,7 +364,7 @@ export async function searchPlatformContent(query: string): Promise<{
     supabase
       .from("knowledge")
       .select(
-        "id,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+        "id,author_id,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
       )
       .eq("status", "published")
       .or(`title.ilike.${pattern},summary.ilike.${pattern}`)
@@ -319,7 +373,7 @@ export async function searchPlatformContent(query: string): Promise<{
     supabase
       .from("resources")
       .select(
-        "slug,title,description,type,url,view_count,like_count,resource_tags(tags(name))",
+        "creator_id,slug,title,description,type,url,view_count,like_count,resource_tags(tags(name))",
       )
       .eq("is_published", true)
       .or(`title.ilike.${pattern},description.ilike.${pattern},url.ilike.${pattern}`)

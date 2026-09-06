@@ -2,12 +2,16 @@ import Link from "next/link";
 
 import { ContentCard } from "@/components/content-card";
 import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/auth/session";
 import { getKnowledgeItems } from "@/lib/platform/queries";
 
 export const revalidate = 60;
 
 export default async function KnowledgePage() {
-  const knowledgeItems = await getKnowledgeItems();
+  const [knowledgeItems, user] = await Promise.all([
+    getKnowledgeItems(),
+    getCurrentUser(),
+  ]);
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
@@ -21,12 +25,21 @@ export default async function KnowledgePage() {
               教程、指南、最佳实践、参考资料、FAQ 和工程记录均从 Supabase knowledge 表读取。
             </p>
           </div>
-          <Link
-            href="/knowledge/new"
-            className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
-          >
-            发布帖子
-          </Link>
+          {user ? (
+            <Link
+              href="/knowledge/new"
+              className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+            >
+              发布知识库
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="rounded-md border border-[#cfd6df] px-4 py-2 text-sm font-semibold text-[#3f4754] transition hover:bg-[#f0f3f6]"
+            >
+              登录后发布
+            </Link>
+          )}
         </div>
       </section>
 
@@ -37,7 +50,6 @@ export default async function KnowledgePage() {
             title={item.title}
             description={item.summary}
             href={`/knowledge/${encodeURIComponent(item.slug)}`}
-            meta={`${item.type} / ${item.difficulty}`}
             tags={item.tags}
           />
         ))}

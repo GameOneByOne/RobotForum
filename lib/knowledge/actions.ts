@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { requireCurrentUser } from "@/lib/auth/session";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -147,11 +148,13 @@ export async function publishKnowledge(formData: FormData): Promise<void> {
 
   validateKnowledgeInput(title, content);
 
+  const user = await requireCurrentUser();
   const slug = createSlug(title);
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("knowledge")
     .insert({
+      author_id: user.id,
       slug,
       title,
       summary: summary || createSummary(content),
@@ -216,6 +219,7 @@ export async function saveKnowledgeUpdate(
 
   validateKnowledgeInput(title, content);
 
+  const user = await requireCurrentUser();
   const nextSlug = createSlug(title);
   const supabase = await createClient();
   const updateQuery = supabase
@@ -231,7 +235,9 @@ export async function saveKnowledgeUpdate(
   const { data, error } = await (id
     ? updateQuery.eq("id", id)
     : updateQuery.eq("slug", slug)
-  ).maybeSingle();
+  )
+    .eq("author_id", user.id)
+    .maybeSingle();
 
   if (error || !data) {
     throw new Error(
@@ -260,8 +266,13 @@ export async function deleteKnowledge(formData: FormData): Promise<void> {
     throw new Error("缺少知识库标识，无法删除。");
   }
 
+  const user = await requireCurrentUser();
   const supabase = await createClient();
-  const { error } = await supabase.from("knowledge").delete().eq("slug", slug);
+  const { error } = await supabase
+    .from("knowledge")
+    .delete()
+    .eq("slug", slug)
+    .eq("author_id", user.id);
 
   if (error) {
     throw new Error(`删除失败：${error.message}`);

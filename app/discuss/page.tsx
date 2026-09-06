@@ -3,6 +3,7 @@ import Link from "next/link";
 import { navItems } from "@/app/forum-data";
 import { PostCard } from "@/components/post-card";
 import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/auth/session";
 import { getForumPosts } from "@/lib/forum/posts";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 
@@ -24,7 +25,10 @@ export default async function DiscussPage({ searchParams }: DiscussPageProps) {
     requestedCategory && navItems.includes(requestedCategory)
       ? requestedCategory
       : allPostsLabel;
-  const filteredPosts = await getForumPosts(selectedCategory);
+  const [filteredPosts, user] = await Promise.all([
+    getForumPosts(selectedCategory),
+    getCurrentUser(),
+  ]);
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
@@ -69,12 +73,21 @@ export default async function DiscussPage({ searchParams }: DiscussPageProps) {
               <p className="text-sm font-semibold text-[#24706f]">Discuss</p>
               <h1 className="mt-1 text-2xl font-bold">{selectedCategory}</h1>
             </div>
-            <Link
-              href="/posts/new"
-              className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
-            >
-              发布帖子
-            </Link>
+            {user ? (
+              <Link
+                href="/posts/new"
+                className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+              >
+                发布帖子
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-md border border-[#cfd6df] px-4 py-2 text-sm font-semibold text-[#3f4754] transition hover:bg-[#f0f3f6]"
+              >
+                登录后发布
+              </Link>
+            )}
           </div>
 
           {filteredPosts.map((post) => (

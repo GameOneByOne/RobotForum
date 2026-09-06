@@ -64,7 +64,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               key={item.slug}
               title={item.title}
               description={item.summary}
-              meta={`Knowledge / ${item.type}`}
               tags={item.tags}
             />
           ))}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { KnowledgeEditor } from "@/app/knowledge/new/knowledge-editor";
 import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/auth/session";
 import { updateKnowledge } from "@/lib/knowledge/actions";
 import { parseKnowledgeSections } from "@/lib/knowledge/sections";
 import { getKnowledgeItemBySlug } from "@/lib/platform/queries";
@@ -20,10 +21,13 @@ export default async function EditKnowledgePage({
   params,
 }: EditKnowledgePageProps) {
   const { slug } = await params;
-  const item = await getKnowledgeItemBySlug(slug);
+  const [item, user] = await Promise.all([
+    getKnowledgeItemBySlug(slug),
+    getCurrentUser(),
+  ]);
   const isSupabaseConfigured = hasSupabaseEnv();
 
-  if (!item) {
+  if (!item || !user || item.authorId !== user.id) {
     notFound();
   }
 

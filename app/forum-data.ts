@@ -1,4 +1,5 @@
 export type ForumPost = {
+  ownerId: string | null;
   slug: string;
   category: string;
   title: string;

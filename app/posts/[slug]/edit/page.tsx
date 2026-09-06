@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { navItems } from "@/app/forum-data";
 import { MarkdownEditor } from "@/app/posts/new/markdown-editor";
 import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/auth/session";
 import { updatePost } from "@/lib/forum/actions";
 import { getForumPostBySlug } from "@/lib/forum/posts";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
@@ -20,10 +21,13 @@ export const dynamic = "force-dynamic";
 
 export default async function EditPostPage({ params }: EditPostPageProps) {
   const { slug } = await params;
-  const post = await getForumPostBySlug(slug);
+  const [post, user] = await Promise.all([
+    getForumPostBySlug(slug),
+    getCurrentUser(),
+  ]);
   const isSupabaseConfigured = hasSupabaseEnv();
 
-  if (!post) {
+  if (!post || !user || post.ownerId !== user.id) {
     notFound();
   }
 

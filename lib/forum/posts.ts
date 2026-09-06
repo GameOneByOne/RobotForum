@@ -5,6 +5,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createPublicClient } from "@/lib/supabase/public";
 
 type ForumPostRow = {
+  owner_id?: string | null;
   slug: string;
   title: string;
   excerpt: string | null;
@@ -47,6 +48,7 @@ function mapPost(row: ForumPostRow): ForumPost {
   const tags = (row.tags ?? []).filter((tag) => tag !== deletedPostTag);
 
   return {
+    ownerId: row.owner_id ?? null,
     slug: row.slug,
     category: categoryFromTags(tags),
     title: row.title,
@@ -111,7 +113,7 @@ export async function getForumPosts(
     let query = supabase
       .from("forum_posts")
       .select(
-        "slug,title,excerpt,author_name,tags,view_count,like_count,reply_count,published_at",
+        "owner_id,slug,title,excerpt,author_name,tags,view_count,like_count,reply_count,published_at",
       )
       .eq("is_published", true)
       .order("published_at", { ascending: false });
@@ -151,7 +153,7 @@ export async function searchForumPosts(query: string): Promise<ForumPost[]> {
     const { data, error } = await supabase
       .from("forum_posts")
       .select(
-        "slug,title,excerpt,author_name,tags,view_count,like_count,reply_count,published_at",
+        "owner_id,slug,title,excerpt,author_name,tags,view_count,like_count,reply_count,published_at",
       )
       .eq("is_published", true)
       .or(`title.ilike.${pattern},excerpt.ilike.${pattern},author_name.ilike.${pattern}`)
@@ -188,7 +190,7 @@ export const getForumPostBySlug = cache(async function getForumPostBySlug(
     const { data, error } = await supabase
       .from("forum_posts")
       .select(
-        "slug,title,excerpt,content,author_name,tags,view_count,like_count,reply_count,published_at",
+        "owner_id,slug,title,excerpt,content,author_name,tags,view_count,like_count,reply_count,published_at",
       )
       .eq("slug", slug)
       .eq("is_published", true)

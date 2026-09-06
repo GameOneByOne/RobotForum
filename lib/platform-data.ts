@@ -1,4 +1,5 @@
 export type ProjectCard = {
+  ownerId: string | null;
   slug: string;
   title: string;
   description: string;
@@ -11,6 +12,7 @@ export type ProjectCard = {
 
 export type KnowledgeItem = {
   id: string;
+  authorId: string | null;
   slug: string;
   title: string;
   summary: string;
@@ -29,6 +31,7 @@ export type KnowledgeItem = {
 };
 
 export type ResourceItem = {
+  creatorId: string | null;
   slug: string;
   title: string;
   description: string;

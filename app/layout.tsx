@@ -19,8 +19,8 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Robot Developer Platform",
-  description: "机器人开发者技术协作平台。",
+  title: "Robot Knowledge Platform",
+  description: "机器人开发者知识论坛。",
 };
 
 export default function RootLayout({

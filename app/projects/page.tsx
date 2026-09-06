@@ -2,12 +2,13 @@ import Link from "next/link";
 
 import { ContentCard } from "@/components/content-card";
 import { SiteHeader } from "@/components/site-header";
+import { getCurrentUser } from "@/lib/auth/session";
 import { getProjects } from "@/lib/platform/queries";
 
 export const revalidate = 60;
 
 export default async function ProjectsPage() {
-  const projects = await getProjects();
+  const [projects, user] = await Promise.all([getProjects(), getCurrentUser()]);
 
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
@@ -21,26 +22,45 @@ export default async function ProjectsPage() {
               展示机器人开发者正在构建的项目，数据来自 Supabase projects 表。
             </p>
           </div>
-          <Link
-            href="/posts/new"
-            className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
-          >
-            发布帖子
-          </Link>
+          {user ? (
+            <Link
+              href="/projects/new"
+              className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+            >
+              发布项目
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="rounded-md border border-[#cfd6df] px-4 py-2 text-sm font-semibold text-[#3f4754] transition hover:bg-[#f0f3f6]"
+            >
+              登录后发布
+            </Link>
+          )}
         </div>
       </section>
 
       <div className="mx-auto grid w-[80vw] max-w-none gap-4 px-5 py-8 md:grid-cols-3">
         {projects.map((project) => (
-          <ContentCard
-            key={project.slug}
-            title={project.title}
-            description={`${project.description}${
-              project.githubUrl ? ` GitHub: ${project.githubUrl}` : ""
-            }`}
-            meta={project.author}
-            tags={project.tags}
-          />
+          <div key={project.slug} className="space-y-2">
+            <ContentCard
+              title={project.title}
+              description={`${project.description}${
+                project.githubUrl ? ` GitHub: ${project.githubUrl}` : ""
+              }`}
+              href={`/projects/${encodeURIComponent(project.slug)}`}
+              meta={project.author}
+              tags={project.tags}
+            />
+            {user && project.ownerId === user.id && (
+              <Link
+                href={`/projects/${encodeURIComponent(project.slug)}/edit`}
+                className="inline-flex rounded-md border border-[#cfd6df] bg-white px-3 py-1.5 text-xs font-semibold text-[#3f4754] hover:bg-[#f0f3f6]"
+              >
+                编辑项目
+              </Link>
+            )}
+          </div>
         ))}
       </div>
 
