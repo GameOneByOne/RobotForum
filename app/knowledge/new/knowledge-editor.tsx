@@ -801,7 +801,7 @@ export function KnowledgeEditor({
       return (
         <div key={section.id}>
           {isDropBefore && (
-            <div className="my-1 h-0.5 rounded-full bg-[#24706f]" />
+            <div className="my-1 h-0.5 rounded-full bg-accent" />
           )}
           <button
             type="button"
@@ -856,15 +856,15 @@ export function KnowledgeEditor({
             }
             className={`block w-full truncate rounded-md px-3 py-2 text-left text-sm font-medium ${
               isActive
-                ? "bg-[#24706f] text-white"
-                : "cursor-grab text-[#3f4754] hover:bg-[#f0f3f6] active:cursor-grabbing"
+                ? "bg-accent text-canvas"
+                : "cursor-grab text-secondary hover:bg-raised active:cursor-grabbing"
             }`}
             style={{ paddingLeft: `${12 + depth * 18}px` }}
           >
             {section.title || "未命名章节"}
           </button>
           {isDropAfter && (
-            <div className="my-1 h-0.5 rounded-full bg-[#24706f]" />
+            <div className="my-1 h-0.5 rounded-full bg-accent" />
           )}
           {renderSectionTree(section.id, depth + 1)}
         </div>
@@ -880,14 +880,14 @@ export function KnowledgeEditor({
       <input type="hidden" name="sections" value={JSON.stringify(sections)} />
       <input type="hidden" name="tags" value={JSON.stringify(tags)} />
 
-      <section className="space-y-4 rounded-lg border border-[#d8dee6] bg-white p-5">
+      <section className="space-y-4 rounded-xl border border-line bg-panel p-5">
         <label className="block space-y-2">
           <span className="text-sm font-semibold">知识库名称</span>
           <input
             name="title"
             value={knowledgeTitle}
             onChange={(event) => setKnowledgeTitle(event.target.value)}
-            className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+            className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
             required
           />
         </label>
@@ -898,14 +898,14 @@ export function KnowledgeEditor({
             name="summary"
             value={summary}
             onChange={(event) => setSummary(event.target.value)}
-            className="min-h-24 w-full resize-y rounded-md border border-[#cfd6df] px-3 py-2 text-sm leading-6 outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+            className="min-h-24 w-full resize-y rounded-md border border-line px-3 py-2 text-sm leading-6 outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
             placeholder="用一两句话说明这篇知识库适合解决什么问题。"
           />
         </label>
 
         <div className="space-y-2">
           <span className="text-sm font-semibold">知识库标签</span>
-          <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-md border border-[#cfd6df] bg-white px-3 py-2 focus-within:border-[#24706f] focus-within:ring-2 focus-within:ring-[#b7cfcd]">
+          <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-md border border-line bg-panel px-3 py-2 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-dim">
             {tags.map((tag, index) => {
               const colorClass = getTagColorClass(index);
 
@@ -939,7 +939,7 @@ export function KnowledgeEditor({
       </section>
 
       <div
-        className={`grid min-h-[720px] rounded-lg border border-[#d8dee6] bg-white ${
+        className={`grid min-h-[720px] rounded-xl border border-line bg-panel ${
           isSectionNavCollapsed
             ? "lg:grid-cols-[44px_1fr]"
             : "lg:grid-cols-[260px_1fr]"
@@ -948,7 +948,7 @@ export function KnowledgeEditor({
         onClick={() => setContextMenu(null)}
       >
         <aside
-          className="border-b border-[#d8dee6] bg-[#fbfcfd] lg:border-b-0 lg:border-r"
+          className="border-b border-line bg-canvas lg:border-b-0 lg:border-r"
           onContextMenu={handleBlankContextMenu}
         >
           {isSectionNavCollapsed ? (
@@ -961,20 +961,20 @@ export function KnowledgeEditor({
                   event.stopPropagation();
                   setIsSectionNavCollapsed(false);
                 }}
-                className="h-8 w-8 rounded-md border border-[#cfd6df] bg-white text-sm font-semibold text-[#3f4754] hover:border-[#24706f] hover:text-[#24706f]"
+                className="h-8 w-8 rounded-md border border-line bg-panel text-sm font-semibold text-secondary hover:border-accent hover:text-accent"
               >
                 &gt;
               </button>
             </div>
           ) : (
             <>
-              <div className="border-b border-[#d8dee6] p-4">
+              <div className="border-b border-line p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-[#171a20]">
+                    <p className="text-sm font-semibold text-ink">
                       章节导航
                     </p>
-                    <p className="mt-1 text-xs leading-5 text-[#667085]">
+                    <p className="mt-1 text-xs leading-5 text-muted">
                       右键空白处新建章节，拖拽同级章节排序。
                     </p>
                   </div>
@@ -986,7 +986,7 @@ export function KnowledgeEditor({
                       event.stopPropagation();
                       setIsSectionNavCollapsed(true);
                     }}
-                    className="h-8 w-8 shrink-0 rounded-md border border-[#cfd6df] bg-white text-sm font-semibold text-[#3f4754] hover:border-[#24706f] hover:text-[#24706f]"
+                    className="h-8 w-8 shrink-0 rounded-md border border-line bg-panel text-sm font-semibold text-secondary hover:border-accent hover:text-accent"
                   >
                     &lt;
                   </button>
@@ -1001,7 +1001,7 @@ export function KnowledgeEditor({
         </aside>
 
         <section className="min-w-0">
-          <div className="border-b border-[#d8dee6] p-4">
+          <div className="border-b border-line p-4">
             <label className="block max-w-xl space-y-2">
               <span className="text-sm font-semibold">当前章节名称</span>
               <input
@@ -1009,16 +1009,16 @@ export function KnowledgeEditor({
                 onChange={(event) =>
                   updateActiveSection({ title: event.target.value })
                 }
-                className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+                className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
                 required
               />
             </label>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d8dee6] px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
             <div>
               <p className="text-sm font-semibold">Markdown 正文</p>
-              <p className="mt-1 text-xs text-[#667085]">
+              <p className="mt-1 text-xs text-muted">
                 每个章节拥有独立 Markdown 文档，按 Tab 切换右侧预览。
               </p>
             </div>
@@ -1026,13 +1026,13 @@ export function KnowledgeEditor({
             <button
               type="button"
               onClick={toggleSplitPreview}
-              className="rounded-md bg-[#24706f] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1f6867]"
+              className="rounded-md bg-accent px-3 py-2 text-xs font-semibold text-canvas transition hover:bg-accent-strong"
             >
               {isSplitPreview ? "关闭预览" : "分屏预览"}
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2 border-b border-[#edf0f3] bg-[#fbfcfd] px-4 py-3">
+          <div className="flex flex-wrap gap-2 border-b border-raised bg-canvas px-4 py-3">
             {toolbarActions.map((action) => (
               <button
                 key={action.title}
@@ -1042,7 +1042,7 @@ export function KnowledgeEditor({
                   event.preventDefault();
                   insertMarkdown(action);
                 }}
-                className="min-h-8 rounded-md border border-[#cfd6df] bg-white px-2.5 text-xs font-semibold text-[#3f4754] hover:border-[#24706f] hover:text-[#24706f]"
+                className="min-h-8 rounded-md border border-line bg-panel px-2.5 text-xs font-semibold text-secondary hover:border-accent hover:text-accent"
               >
                 {action.label}
               </button>
@@ -1072,10 +1072,10 @@ export function KnowledgeEditor({
                 onDrop={handleImageDrop}
                 onPaste={handleImagePaste}
                 onScroll={syncPreviewScroll}
-                className="h-[560px] w-full resize-y rounded-md border border-[#cfd6df] bg-[#fbfcfd] px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+                className="h-[560px] w-full resize-y rounded-md border border-line bg-canvas px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
                 required
               />
-              <div className="mt-2 flex justify-between text-xs text-[#667085]">
+              <div className="mt-2 flex justify-between text-xs text-muted">
                 <span>{sections.length} 个章节</span>
                 <span>
                   {saveStatus ||
@@ -1088,9 +1088,9 @@ export function KnowledgeEditor({
             {isSplitPreview && (
               <div
                 ref={previewRef}
-                className="h-[560px] overflow-y-auto rounded-md border border-[#edf0f3] bg-white p-4"
+                className="h-[560px] overflow-y-auto rounded-md border border-raised bg-panel p-4"
               >
-                <div className="space-y-5 text-sm leading-7 text-[#3f4754]">
+                <div className="space-y-5 text-sm leading-7 text-secondary">
                   <MarkdownContent source={activeSection.content} />
                 </div>
               </div>
@@ -1100,7 +1100,7 @@ export function KnowledgeEditor({
 
         {contextMenu && (
           <div
-            className="fixed z-50 w-44 overflow-hidden rounded-md border border-[#cfd6df] bg-white py-1 text-sm shadow-lg"
+            className="fixed z-50 w-44 overflow-hidden rounded-md border border-line bg-panel py-1 text-sm shadow-lg"
             style={{ left: contextMenu.x, top: contextMenu.y }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -1113,14 +1113,14 @@ export function KnowledgeEditor({
                     <button
                       type="button"
                       onClick={() => addSection(sectionId)}
-                      className="block w-full px-3 py-2 text-left text-[#3f4754] hover:bg-[#f0f3f6]"
+                      className="block w-full px-3 py-2 text-left text-secondary hover:bg-raised"
                     >
                       新建子章节
                     </button>
                     <button
                       type="button"
                       onClick={() => deleteSection(sectionId)}
-                      className="block w-full px-3 py-2 text-left text-[#d92d20] hover:bg-[#fff4f2]"
+                      className="block w-full px-3 py-2 text-left text-danger hover:bg-danger-dim"
                     >
                       删除章节
                     </button>
@@ -1130,7 +1130,7 @@ export function KnowledgeEditor({
             <button
               type="button"
               onClick={() => addSection(null)}
-              className="block w-full px-3 py-2 text-left text-[#3f4754] hover:bg-[#f0f3f6]"
+              className="block w-full px-3 py-2 text-left text-secondary hover:bg-raised"
             >
               新建章节
             </button>

@@ -46,13 +46,13 @@ export default async function KnowledgeDetailPage({
   const canManageKnowledge = Boolean(user && item.authorId === user.id);
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
+    <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
-      <header className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto w-[80vw] max-w-none px-5 py-6">
+      <header className="border-b border-line bg-panel">
+        <div className="mx-auto w-full max-w-7xl px-5 py-6">
           <Link
             href="/knowledge"
-            className="text-sm font-medium text-[#24706f] hover:text-[#1f6867]"
+            className="text-sm font-medium text-accent hover:text-accent-strong"
           >
             返回知识库
           </Link>
@@ -60,7 +60,7 @@ export default async function KnowledgeDetailPage({
             <div>
               <h1 className="mt-2 text-3xl font-bold">{item.title}</h1>
               {item.summary && (
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-[#5b6472]">
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">
                   {item.summary}
                 </p>
               )}
@@ -70,7 +70,7 @@ export default async function KnowledgeDetailPage({
               <div className="flex flex-wrap gap-2">
                 <Link
                   href={`/knowledge/${encodedSlug}/edit`}
-                  className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+                  className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
                 >
                   编辑知识库
                 </Link>
@@ -78,7 +78,7 @@ export default async function KnowledgeDetailPage({
                   <input type="hidden" name="slug" value={item.slug} />
                   <button
                     type="submit"
-                    className="rounded-md border border-[#d92d20] bg-white px-4 py-2 text-sm font-semibold text-[#d92d20] transition hover:bg-[#fff4f2]"
+                    className="rounded-md border border-danger bg-panel px-4 py-2 text-sm font-semibold text-danger transition hover:bg-danger-dim"
                   >
                     删除知识库
                   </button>
@@ -94,7 +94,7 @@ export default async function KnowledgeDetailPage({
         sections={sections}
       />
 
-      <div className="mx-auto w-[80vw] max-w-none px-5 pb-8">
+      <div className="mx-auto w-full max-w-7xl px-5 pb-8">
         <CommentSection
           comments={comments}
           targetSlug={item.slug}

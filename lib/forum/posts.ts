@@ -1,3 +1,8 @@
+import {
+  normalizeSearchQuery,
+  SEARCH_LIMIT,
+  textSearchFilter,
+} from "@/lib/search";
 import { cache } from "react";
 
 import { navItems, type ForumPost } from "@/app/forum-data";
@@ -96,10 +101,6 @@ function searchText(values: string[], query: string): boolean {
   return values.join(" ").toLowerCase().includes(keyword);
 }
 
-function searchableKeyword(query: string) {
-  return query.trim().replace(/[%,]/g, " ").replace(/\s+/g, " ");
-}
-
 export async function getForumPosts(
   category: string,
   limit?: number,
@@ -141,41 +142,39 @@ export async function getForumPosts(
 }
 
 export async function searchForumPosts(query: string): Promise<ForumPost[]> {
-  const keyword = searchableKeyword(query);
-
-  if (!keyword || !hasSupabaseEnv()) {
-    return [];
-  }
-
-  try {
-    const supabase = createPublicClient();
-    const pattern = `%${keyword}%`;
-    const { data, error } = await supabase
+  const keyword = normalizeSearchQuery(query);
+  if (!keyword || !hasSupabaseEnv()) return [];
+  const supabase = createPublicClient();
+  const columns =
+    "owner_id,slug,title,excerpt,author_name,tags,view_count,like_count,reply_count,published_at";
+  const [textResult, tagResult] = await Promise.all([
+    supabase
       .from("forum_posts")
-      .select(
-        "owner_id,slug,title,excerpt,author_name,tags,view_count,like_count,reply_count,published_at",
-      )
+      .select(columns)
       .eq("is_published", true)
-      .or(`title.ilike.${pattern},excerpt.ilike.${pattern},author_name.ilike.${pattern}`)
+      .not("tags", "cs", '{"__deleted__"}')
+      .or(textSearchFilter(["title", "excerpt", "author_name"], keyword))
       .order("published_at", { ascending: false })
-      .limit(30);
-
-    if (error || !data) {
-      return [];
-    }
-
-    return data
-      .filter((row) => !(row as ForumPostRow).tags?.includes(deletedPostTag))
-      .map((row) => mapPost(row as ForumPostRow))
-      .filter((post) =>
-        searchText(
-          [post.title, post.excerpt, post.category, post.author, ...post.tags],
-          keyword,
-        ),
-      );
-  } catch {
-    return [];
-  }
+      .limit(SEARCH_LIMIT),
+    supabase
+      .from("forum_posts")
+      .select(columns)
+      .eq("is_published", true)
+      .not("tags", "cs", '{"__deleted__"}')
+      .contains("tags", [keyword])
+      .order("published_at", { ascending: false })
+      .limit(SEARCH_LIMIT),
+  ]);
+  if (textResult.error || tagResult.error)
+    throw new Error("讨论搜索暂时不可用");
+  const rows = [
+    ...(textResult.data ?? []),
+    ...(tagResult.data ?? []),
+  ] as ForumPostRow[];
+  return [...new Map(rows.map((row) => [row.slug, row])).values()]
+    .sort((a, b) => (b.published_at ?? "").localeCompare(a.published_at ?? ""))
+    .slice(0, SEARCH_LIMIT)
+    .map(mapPost);
 }
 
 export const getForumPostBySlug = cache(async function getForumPostBySlug(

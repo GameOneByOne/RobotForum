@@ -11,28 +11,28 @@ export default async function ProjectsPage() {
   const [projects, user] = await Promise.all([getProjects(), getCurrentUser()]);
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
+    <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
-      <section className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto flex w-[80vw] max-w-none flex-wrap items-start justify-between gap-4 px-5 py-10">
+      <section className="page-hero">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-start justify-between gap-4 px-5 py-14 sm:py-20">
           <div>
-            <p className="text-sm font-semibold text-[#24706f]">Projects</p>
-            <h1 className="mt-2 text-4xl font-bold">项目展示</h1>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-[#5b6472]">
-              展示机器人开发者正在构建的项目，数据来自 Supabase projects 表。
+            <p className="eyebrow">Projects</p>
+            <h1 className="mt-5 text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">项目展示</h1>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-muted">
+              从工程想法到真实作品，探索机器人开发者的开源实践。
             </p>
           </div>
           {user ? (
             <Link
               href="/projects/new"
-              className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+              className="primary-link"
             >
               发布项目
             </Link>
           ) : (
             <Link
               href="/login"
-              className="rounded-md border border-[#cfd6df] px-4 py-2 text-sm font-semibold text-[#3f4754] transition hover:bg-[#f0f3f6]"
+              className="rounded-md border border-line px-4 py-2 text-sm font-semibold text-secondary transition hover:bg-raised"
             >
               登录后发布
             </Link>
@@ -40,7 +40,7 @@ export default async function ProjectsPage() {
         </div>
       </section>
 
-      <div className="mx-auto grid w-[80vw] max-w-none gap-4 px-5 py-8 md:grid-cols-3">
+      <div className="mx-auto grid w-full max-w-7xl gap-4 px-5 py-8 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((project) => (
           <div key={project.slug} className="space-y-2">
             <ContentCard
@@ -55,7 +55,7 @@ export default async function ProjectsPage() {
             {user && project.ownerId === user.id && (
               <Link
                 href={`/projects/${encodeURIComponent(project.slug)}/edit`}
-                className="inline-flex rounded-md border border-[#cfd6df] bg-white px-3 py-1.5 text-xs font-semibold text-[#3f4754] hover:bg-[#f0f3f6]"
+                className="inline-flex rounded-md border border-line bg-panel px-3 py-1.5 text-xs font-semibold text-secondary hover:bg-raised"
               >
                 编辑项目
               </Link>
@@ -65,8 +65,8 @@ export default async function ProjectsPage() {
       </div>
 
       {!projects.length && (
-        <div className="mx-auto w-[80vw] max-w-none px-5 pb-8">
-          <p className="rounded-lg border border-[#d8dee6] bg-white p-5 text-sm text-[#667085]">
+        <div className="mx-auto w-full max-w-7xl px-5 pb-8">
+          <p className="rounded-xl border border-line bg-panel p-5 text-sm text-muted">
             数据库中暂无项目数据。
           </p>
         </div>

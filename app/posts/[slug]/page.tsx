@@ -45,14 +45,14 @@ export default async function PostPage({ params }: PostPageProps) {
   const canManagePost = Boolean(user && post.ownerId === user.id);
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
+    <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
-      <header className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto w-[80vw] max-w-none px-5 py-6">
+      <header className="border-b border-line bg-panel">
+        <div className="mx-auto w-full max-w-7xl px-5 py-6">
           <div className="flex items-center justify-between gap-4">
             <Link
               href="/discuss"
-              className="text-sm font-medium text-[#24706f] hover:text-[#1f6867]"
+              className="text-sm font-medium text-accent hover:text-accent-strong"
             >
               返回讨论列表
             </Link>
@@ -60,7 +60,7 @@ export default async function PostPage({ params }: PostPageProps) {
               <div className="flex flex-wrap gap-2">
                 <Link
                   href={`/posts/${post.slug}/edit`}
-                  className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+                  className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
                 >
                   编辑帖子
                 </Link>
@@ -68,7 +68,7 @@ export default async function PostPage({ params }: PostPageProps) {
                   <input type="hidden" name="slug" value={post.slug} />
                   <button
                     type="submit"
-                    className="rounded-md border border-[#d92d20] bg-white px-4 py-2 text-sm font-semibold text-[#d92d20] transition hover:bg-[#fff4f2]"
+                    className="rounded-md border border-danger bg-panel px-4 py-2 text-sm font-semibold text-danger transition hover:bg-danger-dim"
                   >
                     删除帖子
                   </button>
@@ -76,13 +76,13 @@ export default async function PostPage({ params }: PostPageProps) {
               </div>
             )}
           </div>
-          <p className="mt-5 text-xs font-semibold uppercase text-[#24706f]">
+          <p className="mt-5 text-xs font-semibold uppercase text-accent">
             {post.category}
           </p>
           <h1 className="mt-2 text-3xl font-bold leading-tight">
             {post.title}
           </h1>
-          <div className="mt-4 flex flex-wrap gap-3 text-sm text-[#667085]">
+          <div className="mt-4 flex flex-wrap gap-3 text-sm text-muted">
             <span>作者：{post.author}</span>
             <span>发布时间：{post.date}</span>
             <span>回复：{post.replies}</span>
@@ -92,20 +92,20 @@ export default async function PostPage({ params }: PostPageProps) {
         </div>
       </header>
 
-      <article className="mx-auto w-[80vw] max-w-none px-5 py-6">
-        <div className="rounded-lg border border-[#d8dee6] bg-white p-6">
+      <article className="mx-auto w-full max-w-7xl px-5 py-6">
+        <div className="rounded-xl border border-line bg-panel p-6">
           <div className="flex flex-wrap gap-2">
             {post.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-md bg-[#f0f3f6] px-2.5 py-1 text-xs font-medium text-[#526071]"
+                className="rounded-md bg-raised px-2.5 py-1 text-xs font-medium text-secondary"
               >
                 {tag}
               </span>
             ))}
           </div>
 
-          <div className="mt-6 space-y-6 text-xl leading-10 text-[#3f4754]">
+          <div className="mt-6 space-y-6 text-xl leading-10 text-secondary">
             <MarkdownContent size="large" source={post.content.join("\n\n")} />
           </div>
         </div>

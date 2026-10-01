@@ -32,27 +32,27 @@ export default async function ResourceDetailPage({
   const canManageResource = Boolean(user && resource.creatorId === user.id);
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
+    <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
-      <section className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto w-[80vw] max-w-none px-5 py-6">
-          <Link className="text-sm font-medium text-[#24706f]" href="/resources">
+      <section className="border-b border-line bg-panel">
+        <div className="mx-auto w-full max-w-7xl px-5 py-6">
+          <Link className="text-sm font-medium text-accent" href="/resources">
             返回资源目录
           </Link>
           <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-[#24706f]">
+              <p className="text-sm font-semibold text-accent">
                 {resource.type}
               </p>
               <h1 className="mt-2 text-3xl font-bold">{resource.title}</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-[#5b6472]">
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">
                 {resource.description}
               </p>
             </div>
             {canManageResource && (
               <Link
                 href={`/resources/${encodeURIComponent(resource.slug)}/edit`}
-                className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+                className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
               >
                 编辑资源
               </Link>
@@ -60,7 +60,7 @@ export default async function ResourceDetailPage({
           </div>
           <a
             href={resource.url}
-            className="mt-4 inline-flex rounded-md border border-[#cfd6df] px-3 py-2 text-sm font-semibold text-[#3f4754] hover:bg-[#f0f3f6]"
+            className="mt-4 inline-flex rounded-md border border-line px-3 py-2 text-sm font-semibold text-secondary hover:bg-raised"
             rel="noreferrer"
             target="_blank"
           >
@@ -69,7 +69,7 @@ export default async function ResourceDetailPage({
         </div>
       </section>
 
-      <div className="mx-auto w-[80vw] max-w-none px-5 py-6">
+      <div className="mx-auto w-full max-w-7xl px-5 py-6">
         <CommentSection
           comments={comments}
           targetSlug={resource.slug}

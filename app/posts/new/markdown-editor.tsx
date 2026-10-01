@@ -206,15 +206,15 @@ export function MarkdownEditor({
 
   return (
     <div
-      className="rounded-lg border border-[#d8dee6] bg-white"
+      className="rounded-xl border border-line bg-panel"
       onKeyDown={handleEditorKeyDown}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#d8dee6] px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
         <div>
           <label htmlFor={name} className="text-sm font-semibold">
             Markdown 正文
           </label>
-          <p className="mt-1 text-xs text-[#667085]">
+          <p className="mt-1 text-xs text-muted">
             按 Tab 打开或关闭右侧预览，编辑区会保持当前滚动位置。
           </p>
         </div>
@@ -222,20 +222,20 @@ export function MarkdownEditor({
         <button
           type="button"
           onClick={toggleSplitPreview}
-          className="rounded-md bg-[#24706f] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1f6867]"
+          className="rounded-md bg-accent px-3 py-2 text-xs font-semibold text-canvas transition hover:bg-accent-strong"
         >
           {isSplitPreview ? "关闭预览" : "分屏预览"}
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b border-[#edf0f3] bg-[#fbfcfd] px-4 py-3">
+      <div className="flex flex-wrap gap-2 border-b border-raised bg-canvas px-4 py-3">
         {toolbarActions.map((action) => (
           <button
             key={action.title}
             type="button"
             title={action.title}
             onMouseDown={(event) => handleToolbarMouseDown(event, action)}
-            className="min-h-8 rounded-md border border-[#cfd6df] bg-white px-2.5 text-xs font-semibold text-[#3f4754] hover:border-[#24706f] hover:text-[#24706f]"
+            className="min-h-8 rounded-md border border-line bg-panel px-2.5 text-xs font-semibold text-secondary hover:border-accent hover:text-accent"
           >
             {action.label}
           </button>
@@ -258,10 +258,10 @@ export function MarkdownEditor({
               window.requestAnimationFrame(syncPreviewScroll);
             }}
             onScroll={syncPreviewScroll}
-            className="h-[620px] w-full resize-y rounded-md border border-[#cfd6df] bg-[#fbfcfd] px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+            className="h-[620px] w-full resize-y rounded-md border border-line bg-canvas px-3 py-3 font-mono text-sm leading-6 outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
             required
           />
-          <div className="mt-2 flex justify-end text-xs text-[#667085]">
+          <div className="mt-2 flex justify-end text-xs text-muted">
             <span>{wordCount} words</span>
           </div>
         </div>
@@ -269,9 +269,9 @@ export function MarkdownEditor({
         {isSplitPreview && (
           <div
             ref={previewRef}
-            className="h-[620px] overflow-y-auto rounded-md border border-[#edf0f3] bg-white p-4"
+            className="h-[620px] overflow-y-auto rounded-md border border-raised bg-panel p-4"
           >
-            <div className="space-y-5 text-sm leading-7 text-[#3f4754]">
+            <div className="space-y-5 text-sm leading-7 text-secondary">
               <MarkdownContent source={markdown} />
             </div>
           </div>

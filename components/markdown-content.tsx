@@ -5,7 +5,7 @@ import { isValidElement } from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeSanitize from "rehype-sanitize";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
@@ -92,8 +92,8 @@ function CodeBlock({
 
   if (language) {
     return (
-      <div className="overflow-hidden rounded-lg border border-[#d8dee6] bg-[#fbfcfd]">
-        <div className="flex min-h-9 items-center justify-between border-b border-[#d8dee6] bg-[#f0f3f6] px-3 text-xs font-medium text-[#526071]">
+      <div className="overflow-hidden rounded-xl border border-line bg-canvas">
+        <div className="flex min-h-9 items-center justify-between border-b border-line bg-raised px-3 text-xs font-medium text-secondary">
           <span>代码</span>
           <span className="font-mono uppercase">{language}</span>
         </div>
@@ -103,7 +103,7 @@ function CodeBlock({
           PreTag="div"
           customStyle={{
             margin: 0,
-            background: "#fbfcfd",
+            background: "#10151c",
             padding: "16px",
             fontSize: isLarge ? "18px" : "13px",
             lineHeight: "1.7",
@@ -114,7 +114,7 @@ function CodeBlock({
                 "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
             },
           }}
-          style={oneLight}
+          style={oneDark}
           wrapLongLines
         >
           {code}
@@ -128,10 +128,10 @@ function CodeBlock({
       {...props}
       className={
         hasMultilineContent(children)
-          ? `block whitespace-pre-wrap font-mono text-[#171a20] ${
+          ? `block whitespace-pre-wrap font-mono text-ink ${
               isLarge ? "text-lg leading-8" : "text-sm leading-7"
             }`
-          : `rounded bg-[#eef2f6] px-1.5 py-0.5 font-mono text-[#171a20] ${
+          : `rounded bg-raised px-1.5 py-0.5 font-mono text-ink ${
               isLarge ? "text-lg" : "text-sm"
             }`
       }
@@ -155,7 +155,7 @@ function PreBlock({
   return (
     <pre
       {...props}
-      className="overflow-x-auto rounded-lg border border-[#d8dee6] bg-[#fbfcfd] p-4"
+      className="overflow-x-auto rounded-xl border border-line bg-canvas p-4"
     >
       {children}
     </pre>
@@ -176,7 +176,7 @@ function MarkdownImage({
       alt={options.alt}
       src={src}
       title={title}
-      className="h-auto w-full rounded-md border border-[#d8dee6]"
+      className="h-auto w-full rounded-md border border-line"
     />
   );
 
@@ -286,8 +286,8 @@ function CodeTabs({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-[#d8dee6] bg-[#fbfcfd]">
-      <div className="flex min-h-10 gap-1 overflow-x-auto border-b border-[#d8dee6] bg-[#f0f3f6] px-2 pt-2">
+    <div className="overflow-hidden rounded-xl border border-line bg-canvas">
+      <div className="flex min-h-10 gap-1 overflow-x-auto border-b border-line bg-raised px-2 pt-2">
         {tabs.map((tab, index) => {
           const isActive = tab === activeTab;
 
@@ -301,8 +301,8 @@ function CodeTabs({
                 isLarge ? "text-base" : "text-xs"
               } ${
                 isActive
-                  ? "bg-[#fbfcfd] text-[#171a20]"
-                  : "text-[#526071] hover:bg-white/60 hover:text-[#24706f]"
+                  ? "bg-canvas text-ink"
+                  : "text-secondary hover:bg-panel/60 hover:text-accent"
               }`}
             >
               {tab.title}
@@ -315,7 +315,7 @@ function CodeTabs({
         PreTag="div"
         customStyle={{
           margin: 0,
-          background: "#fbfcfd",
+          background: "#10151c",
           padding: "16px",
           fontSize: isLarge ? "18px" : "13px",
           lineHeight: "1.7",
@@ -326,7 +326,7 @@ function CodeTabs({
               "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
           },
         }}
-        style={oneLight}
+        style={oneDark}
         wrapLongLines
       >
         {activeTab.code}
@@ -346,7 +346,7 @@ function MarkdownRenderer({ size = "normal", source }: MarkdownContentProps) {
         a: (props) => (
           <a
             {...props}
-            className="font-medium text-[#24706f] underline underline-offset-4"
+            className="font-medium text-accent underline underline-offset-4"
             target="_blank"
             rel="noreferrer"
           />
@@ -354,7 +354,7 @@ function MarkdownRenderer({ size = "normal", source }: MarkdownContentProps) {
         blockquote: (props) => (
           <blockquote
             {...props}
-            className="border-l-4 border-[#b7cfcd] pl-4 text-[#526071]"
+            className="border-l-4 border-accent-dim pl-4 text-secondary"
           />
         ),
         code: (props) => <CodeBlock {...props} size={size} />,
@@ -399,11 +399,11 @@ function MarkdownRenderer({ size = "normal", source }: MarkdownContentProps) {
         th: (props) => (
           <th
             {...props}
-            className="border border-[#d8dee6] bg-[#f0f3f6] px-3 py-2 font-semibold"
+            className="border border-line bg-raised px-3 py-2 font-semibold"
           />
         ),
         td: (props) => (
-          <td {...props} className="border border-[#d8dee6] px-3 py-2" />
+          <td {...props} className="border border-line px-3 py-2" />
         ),
       }}
     >

@@ -14,28 +14,28 @@ export default async function KnowledgePage() {
   ]);
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
+    <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
-      <section className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto flex w-[80vw] max-w-none flex-wrap items-start justify-between gap-4 px-5 py-10">
+      <section className="page-hero">
+        <div className="mx-auto flex w-full max-w-7xl flex-wrap items-start justify-between gap-4 px-5 py-14 sm:py-20">
           <div>
-            <p className="text-sm font-semibold text-[#24706f]">Knowledge</p>
-            <h1 className="mt-2 text-4xl font-bold">工程知识库</h1>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-[#5b6472]">
-              教程、指南、最佳实践、参考资料、FAQ 和工程记录均从 Supabase knowledge 表读取。
+            <p className="eyebrow">Knowledge</p>
+            <h1 className="mt-5 text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">工程知识库</h1>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-muted">
+              沉淀机器人开发中的核心知识，助力每一位创造者更进一步。
             </p>
           </div>
           {user ? (
             <Link
               href="/knowledge/new"
-              className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+              className="primary-link"
             >
               发布知识库
             </Link>
           ) : (
             <Link
               href="/login"
-              className="rounded-md border border-[#cfd6df] px-4 py-2 text-sm font-semibold text-[#3f4754] transition hover:bg-[#f0f3f6]"
+              className="rounded-md border border-line px-4 py-2 text-sm font-semibold text-secondary transition hover:bg-raised"
             >
               登录后发布
             </Link>
@@ -43,10 +43,11 @@ export default async function KnowledgePage() {
         </div>
       </section>
 
-      <section className="mx-auto w-[80vw] max-w-none space-y-4 px-5 py-8">
-        {knowledgeItems.map((item) => (
+      <section className="mx-auto grid w-full max-w-7xl gap-5 px-5 py-10 md:grid-cols-2 xl:grid-cols-3">
+        {knowledgeItems.map((item, index) => (
           <ContentCard
             key={item.slug}
+            index={index}
             title={item.title}
             description={item.summary}
             href={`/knowledge/${encodeURIComponent(item.slug)}`}
@@ -55,7 +56,7 @@ export default async function KnowledgePage() {
         ))}
 
         {!knowledgeItems.length && (
-          <p className="rounded-lg border border-[#d8dee6] bg-white p-5 text-sm text-[#667085]">
+          <p className="rounded-xl border border-line bg-panel p-5 text-sm text-muted">
             数据库中暂无知识库数据。
           </p>
         )}

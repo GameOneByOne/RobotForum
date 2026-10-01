@@ -1,6 +1,5 @@
 import Link from "next/link";
-
-import { getTagColorClass } from "@/lib/tag-colors";
+import { iconForContent, TechIcon } from "@/components/tech-icon";
 
 type ContentCardProps = {
   title: string;
@@ -8,6 +7,7 @@ type ContentCardProps = {
   href?: string;
   meta?: string;
   tags?: string[];
+  index?: number;
 };
 
 export function ContentCard({
@@ -16,43 +16,47 @@ export function ContentCard({
   href,
   meta,
   tags = [],
+  index,
 }: ContentCardProps) {
   const inner = (
     <>
-      {meta && (
-        <p className="text-xs font-semibold uppercase text-[#24706f]">{meta}</p>
-      )}
-      <h3 className="mt-2 text-lg font-semibold leading-snug">{title}</h3>
-      <p className="mt-3 text-sm leading-6 text-[#5b6472]">{description}</p>
-      {tags.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {tags.map((tag, index) => (
-            <span
-              key={tag}
-              className={`rounded-md px-2.5 py-1 text-xs font-semibold ${getTagColorClass(index)}`}
-            >
+      <div className="mb-7 flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
+        <span>{meta || (tags[0] ?? "KNOWLEDGE")}</span>
+        {index !== undefined && (
+          <span>{String(index + 1).padStart(2, "0")}</span>
+        )}
+      </div>
+      <div className="mb-6 text-[#9aafc3]">
+        <TechIcon kind={iconForContent(title, tags)} />
+      </div>
+      <h3 className="card-title text-xl font-semibold leading-snug text-ink lg:text-2xl">
+        {title}
+      </h3>
+      <span className="my-5 h-px w-7 bg-accent/70" />
+      <p className="mb-7 line-clamp-3 text-sm leading-7 text-secondary">
+        {description}
+      </p>
+      <div className="mt-auto flex items-end justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {tags.map((tag) => (
+            <span key={tag} className="tech-tag">
               {tag}
             </span>
           ))}
         </div>
-      )}
+        {href && (
+          <span aria-hidden="true" className="shrink-0 text-xl text-muted">
+            →
+          </span>
+        )}
+      </div>
     </>
   );
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className="block rounded-lg border border-[#d8dee6] bg-white p-5 transition hover:border-[#24706f] hover:shadow-sm"
-      >
-        {inner}
-      </Link>
-    );
-  }
-
-  return (
-    <article className="rounded-lg border border-[#d8dee6] bg-white p-5">
+  return href ? (
+    <Link href={href} className="tech-card group">
       {inner}
-    </article>
+    </Link>
+  ) : (
+    <article className="tech-card">{inner}</article>
   );
 }

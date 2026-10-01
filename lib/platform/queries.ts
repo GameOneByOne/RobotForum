@@ -1,3 +1,10 @@
+import {
+  includeSearchIds,
+  normalizeSearchQuery,
+  searchPattern,
+  SEARCH_LIMIT,
+  textSearchFilter,
+} from "@/lib/search";
 import { cache } from "react";
 
 import type {
@@ -84,20 +91,6 @@ function relationTags(relations?: TagRelation[] | null): string[] {
       ?.map((relation) => relation.tags?.name)
       .filter((name): name is string => Boolean(name)) ?? []
   );
-}
-
-function searchText(values: string[], query: string): boolean {
-  const keyword = query.trim().toLowerCase();
-
-  if (!keyword) {
-    return true;
-  }
-
-  return values.join(" ").toLowerCase().includes(keyword);
-}
-
-function searchableKeyword(query: string) {
-  return query.trim().replace(/[%,]/g, " ").replace(/\s+/g, " ");
 }
 
 function mapProject(row: ProjectRow): ProjectCard {
@@ -204,7 +197,9 @@ export const getProjectBySlug = cache(async function getProjectBySlug(
   return mapProject(data as ProjectRow);
 });
 
-export async function getKnowledgeItems(limit?: number): Promise<KnowledgeItem[]> {
+export async function getKnowledgeItems(
+  limit?: number,
+): Promise<KnowledgeItem[]> {
   if (!hasSupabaseEnv()) {
     return [];
   }
@@ -235,47 +230,49 @@ export async function getKnowledgeItems(limit?: number): Promise<KnowledgeItem[]
   }
 }
 
-export const getKnowledgeItemBySlug = cache(async function getKnowledgeItemBySlug(
-  slug: string,
-): Promise<KnowledgeItem | undefined> {
-  if (!hasSupabaseEnv()) {
-    return undefined;
-  }
-
-  const slugCandidates = Array.from(
-    new Set([
-      slug,
-      (() => {
-        try {
-          return decodeURIComponent(slug);
-        } catch {
-          return slug;
-        }
-      })(),
-    ]),
-  );
-
-  try {
-    const supabase = createPublicClient();
-    const { data, error } = await supabase
-      .from("knowledge")
-      .select(
-        "id,author_id,slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
-      )
-      .in("slug", slugCandidates)
-      .eq("status", "published")
-      .limit(1)
-      .maybeSingle();
-
-    if (error || !data) {
+export const getKnowledgeItemBySlug = cache(
+  async function getKnowledgeItemBySlug(
+    slug: string,
+  ): Promise<KnowledgeItem | undefined> {
+    if (!hasSupabaseEnv()) {
       return undefined;
     }
 
-    return mapKnowledge(data as KnowledgeRow);
-  } catch {
-    return undefined;
-  }
-});
+    const slugCandidates = Array.from(
+      new Set([
+        slug,
+        (() => {
+          try {
+            return decodeURIComponent(slug);
+          } catch {
+            return slug;
+          }
+        })(),
+      ]),
+    );
+
+    try {
+      const supabase = createPublicClient();
+      const { data, error } = await supabase
+        .from("knowledge")
+        .select(
+          "id,author_id,slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+        )
+        .in("slug", slugCandidates)
+        .eq("status", "published")
+        .limit(1)
+        .maybeSingle();
+
+      if (error || !data) {
+        return undefined;
+      }
+
+      return mapKnowledge(data as KnowledgeRow);
+    } catch {
+      return undefined;
+    }
+  },
+);
 
 export async function getResources(limit?: number): Promise<ResourceItem[]> {
   if (!hasSupabaseEnv()) {
@@ -337,18 +334,32 @@ export async function searchPlatformContent(query: string): Promise<{
   knowledge: KnowledgeItem[];
   resources: ResourceItem[];
 }> {
-  const keyword = searchableKeyword(query);
-
-  if (!keyword || !hasSupabaseEnv()) {
-    return {
-      projects: [],
-      knowledge: [],
-      resources: [],
-    };
-  }
+  const keyword = normalizeSearchQuery(query);
+  const empty = { projects: [], knowledge: [], resources: [] };
+  if (!keyword || !hasSupabaseEnv()) return empty;
 
   const supabase = createPublicClient();
-  const pattern = `%${keyword}%`;
+  const pattern = searchPattern(keyword);
+  // Join matching tags to their parent IDs before applying the result limit.
+  const tagResults = await Promise.all([
+    supabase
+      .from("project_tags")
+      .select("project_id,tags!inner(name)")
+      .ilike("tags.name", pattern)
+      .limit(1000),
+    supabase
+      .from("knowledge_tags")
+      .select("knowledge_id,tags!inner(name)")
+      .ilike("tags.name", pattern)
+      .limit(1000),
+    supabase
+      .from("resource_tags")
+      .select("resource_id,tags!inner(name)")
+      .ilike("tags.name", pattern)
+      .limit(1000),
+  ]);
+  if (tagResults.some((result) => result.error))
+    throw new Error("标签搜索暂时不可用");
   const [projectsResult, knowledgeResult, resourcesResult] = await Promise.all([
     supabase
       .from("projects")
@@ -357,58 +368,58 @@ export async function searchPlatformContent(query: string): Promise<{
       )
       .eq("is_published", true)
       .or(
-        `title.ilike.${pattern},description.ilike.${pattern},author_name.ilike.${pattern}`,
+        includeSearchIds(
+          textSearchFilter(["title", "description", "author_name"], keyword),
+          (tagResults[0].data ?? []).map((row) => row.project_id),
+        ),
       )
       .order("created_at", { ascending: false })
-      .limit(20),
+      .limit(SEARCH_LIMIT),
     supabase
       .from("knowledge")
       .select(
         "id,author_id,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
       )
       .eq("status", "published")
-      .or(`title.ilike.${pattern},summary.ilike.${pattern}`)
+      .or(
+        includeSearchIds(
+          textSearchFilter(["title", "summary", "content"], keyword),
+          (tagResults[1].data ?? []).map((row) => row.knowledge_id),
+        ),
+      )
       .order("created_at", { ascending: false })
-      .limit(20),
+      .limit(SEARCH_LIMIT),
     supabase
       .from("resources")
       .select(
         "creator_id,slug,title,description,type,url,view_count,like_count,resource_tags(tags(name))",
       )
       .eq("is_published", true)
-      .or(`title.ilike.${pattern},description.ilike.${pattern},url.ilike.${pattern}`)
+      .or(
+        includeSearchIds(
+          textSearchFilter(["title", "description", "url"], keyword),
+          (tagResults[2].data ?? []).map((row) => row.resource_id),
+        ),
+      )
       .order("created_at", { ascending: false })
-      .limit(20),
+      .limit(SEARCH_LIMIT),
   ]);
-
-  const projects = projectsResult.error
-    ? []
-    : (projectsResult.data ?? []).map((row) => mapProject(row as ProjectRow));
-  const knowledge = knowledgeResult.error
-    ? []
-    : (knowledgeResult.data ?? []).map((row) => mapKnowledge(row as KnowledgeRow));
-  const resources = resourcesResult.error
-    ? []
-    : (resourcesResult.data ?? []).map((row) => mapResource(row as ResourceRow));
-
+  if (
+    [projectsResult, knowledgeResult, resourcesResult].some(
+      (result) => result.error,
+    )
+  ) {
+    throw new Error("内容搜索暂时不可用");
+  }
   return {
-    projects: projects.filter((project) =>
-      searchText(
-        [project.title, project.description, project.author, ...project.tags],
-        query,
-      ),
+    projects: (projectsResult.data ?? []).map((row) =>
+      mapProject(row as ProjectRow),
     ),
-    knowledge: knowledge.filter((item) =>
-      searchText(
-        [item.title, item.summary, item.content, item.type, ...item.tags],
-        query,
-      ),
+    knowledge: (knowledgeResult.data ?? []).map((row) =>
+      mapKnowledge(row as KnowledgeRow),
     ),
-    resources: resources.filter((resource) =>
-      searchText(
-        [resource.title, resource.description, resource.type, resource.url, ...resource.tags],
-        query,
-      ),
+    resources: (resourcesResult.data ?? []).map((row) =>
+      mapResource(row as ResourceRow),
     ),
   };
 }

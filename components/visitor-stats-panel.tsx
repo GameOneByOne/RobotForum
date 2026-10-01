@@ -100,21 +100,21 @@ export function VisitorStatsPanel() {
   return (
     <div
       aria-label="站点实时访问概览"
-      className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs font-medium text-[#667085]"
+      className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs font-medium text-muted"
     >
       <span className="whitespace-nowrap">
         24H访问人数{" "}
-        <strong className="font-bold text-[#1f8a70]">
+        <strong className="font-bold text-accent">
           {stats.visits24h.toLocaleString("zh-CN")}
         </strong>
       </span>
       <span className="whitespace-nowrap">
         当前在线人数{" "}
-        <strong className="font-bold text-[#d04f1f]">
+        <strong className="font-bold text-accent">
           {stats.onlineVisitors.toLocaleString("zh-CN")}
         </strong>
       </span>
-      <span className="whitespace-nowrap text-[11px] font-semibold text-[#24706f]">
+      <span className="whitespace-nowrap text-[11px] font-semibold text-accent">
         {status}
       </span>
     </div>
