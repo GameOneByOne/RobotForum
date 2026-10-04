@@ -5,7 +5,6 @@ import { PostCard } from "@/components/post-card";
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getForumPosts } from "@/lib/forum/posts";
-import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 type DiscussPageProps = {
   searchParams?: Promise<{
@@ -18,7 +17,6 @@ const allPostsLabel = "全部帖子";
 export const revalidate = 60;
 
 export default async function DiscussPage({ searchParams }: DiscussPageProps) {
-  const isSupabaseConfigured = hasSupabaseEnv();
   const params = await searchParams;
   const requestedCategory = params?.category;
   const selectedCategory =
@@ -31,12 +29,12 @@ export default async function DiscussPage({ searchParams }: DiscussPageProps) {
   ]);
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
+    <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
 
-      <div className="mx-auto grid w-[80vw] max-w-none gap-5 px-5 py-6 lg:grid-cols-[20%_1fr_320px]">
-        <aside className="rounded-lg border border-[#d8dee6] bg-white p-4">
-          <h2 className="text-sm font-semibold text-[#667085]">讨论分类</h2>
+      <div className="mx-auto grid w-full max-w-7xl gap-5 px-5 py-6 lg:grid-cols-[200px_minmax(0,1fr)_250px]">
+        <aside className="rounded-xl border border-line bg-panel p-4">
+          <h2 className="text-sm font-semibold text-muted">讨论分类</h2>
           <nav className="mt-3 space-y-1">
             {navItems.map((item) => {
               const isActive = item === selectedCategory;
@@ -56,8 +54,8 @@ export default async function DiscussPage({ searchParams }: DiscussPageProps) {
                   href={href}
                   className={`block rounded-md px-3 py-2 text-sm font-medium ${
                     isActive
-                      ? "bg-[#24706f] text-white"
-                      : "text-[#3f4754] hover:bg-[#f0f3f6]"
+                      ? "bg-accent text-canvas"
+                      : "text-secondary hover:bg-raised"
                   }`}
                 >
                   {item}
@@ -70,20 +68,20 @@ export default async function DiscussPage({ searchParams }: DiscussPageProps) {
         <section id="posts" className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-[#24706f]">Discuss</p>
+              <p className="text-sm font-semibold text-accent">Discuss</p>
               <h1 className="mt-1 text-2xl font-bold">{selectedCategory}</h1>
             </div>
             {user ? (
               <Link
                 href="/posts/new"
-                className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+                className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
               >
                 发布帖子
               </Link>
             ) : (
               <Link
                 href="/login"
-                className="rounded-md border border-[#cfd6df] px-4 py-2 text-sm font-semibold text-[#3f4754] transition hover:bg-[#f0f3f6]"
+                className="rounded-md border border-line px-4 py-2 text-sm font-semibold text-secondary transition hover:bg-raised"
               >
                 登录后发布
               </Link>
@@ -95,46 +93,18 @@ export default async function DiscussPage({ searchParams }: DiscussPageProps) {
           ))}
 
           {!filteredPosts.length && (
-            <div className="rounded-lg border border-[#d8dee6] bg-white p-5 text-sm text-[#667085]">
-              当前分类暂无数据库帖子。
+            <div className="rounded-xl border border-line bg-panel p-5 text-sm text-muted">
+              还没有相关讨论，分享你的第一个工程问题吧。
             </div>
           )}
         </section>
 
         <aside className="space-y-4">
-          <section className="rounded-lg border border-[#d8dee6] bg-white p-4">
-            <h2 className="text-base font-semibold">数据读取状态</h2>
-            <p className="mt-3 text-sm leading-6 text-[#5b6472]">
-              当前页面只读取 Supabase forum_posts 表，不再使用前端假数据。
-            </p>
-          </section>
-
-          <section className="rounded-lg border border-[#d8dee6] bg-white p-4">
-            <h2 className="text-base font-semibold">部署接入状态</h2>
-            <dl className="mt-4 space-y-3 text-sm">
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-[#667085]">前端</dt>
-                <dd className="font-medium">Vercel</dd>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-[#667085]">框架</dt>
-                <dd className="font-medium">Next.js</dd>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-[#667085]">样式</dt>
-                <dd className="font-medium">Tailwind CSS</dd>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-[#667085]">后端</dt>
-                <dd className="font-medium">Supabase</dd>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-[#667085]">环境变量</dt>
-                <dd className="font-medium">
-                  {isSupabaseConfigured ? "已配置" : "待配置"}
-                </dd>
-              </div>
-            </dl>
+          <section className="rounded-xl border border-line bg-panel p-5">
+            <p className="eyebrow">COMMUNITY</p>
+            <h2 className="mt-4 text-base font-semibold">一起解决工程问题</h2>
+            <p className="mt-3 text-sm leading-7 text-secondary">分享背景、复现步骤和代码片段，让其他开发者更快理解你的问题。</p>
+            <Link href="/knowledge" className="mt-5 inline-block text-sm text-accent">浏览工程知识库 →</Link>
           </section>
         </aside>
       </div>

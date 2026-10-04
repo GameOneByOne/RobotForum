@@ -50,8 +50,8 @@ export function KnowledgeDetailView({
 
   if (!activeSection) {
     return (
-      <div className="mx-auto w-[80vw] max-w-none px-5 py-6">
-        <article className="rounded-lg border border-[#d8dee6] bg-white p-6 text-sm text-[#667085]">
+      <div className="mx-auto w-full max-w-7xl px-5 py-6">
+        <article className="rounded-xl border border-line bg-panel p-6 text-sm text-muted">
           暂无章节内容
         </article>
       </div>
@@ -60,11 +60,11 @@ export function KnowledgeDetailView({
 
   return (
     <div
-      className="mx-auto grid w-[80vw] max-w-none gap-5 px-5 py-6 lg:grid-cols-[260px_1fr]"
+      className="mx-auto grid w-full max-w-7xl gap-5 px-5 py-6 lg:grid-cols-[260px_1fr]"
       onClick={() => setContextMenu(null)}
     >
-      <aside className="h-fit rounded-lg border border-[#d8dee6] bg-white p-4 lg:sticky lg:top-24">
-        <h2 className="text-sm font-semibold text-[#667085]">章节导航</h2>
+      <aside className="h-fit rounded-xl border border-line bg-panel p-4 lg:sticky lg:top-24">
+        <h2 className="text-sm font-semibold text-muted">章节导航</h2>
         <nav className="mt-3 max-h-[calc(100vh-180px)] space-y-1 overflow-y-auto">
           {sections.map((section, index) => {
             const isActive = index === activeIndex;
@@ -78,8 +78,8 @@ export function KnowledgeDetailView({
                 onContextMenu={openContextMenu}
                 className={`block w-full truncate rounded-md px-3 py-2 text-left text-sm font-medium ${
                   isActive
-                    ? "bg-[#24706f] text-white"
-                    : "text-[#3f4754] hover:bg-[#f0f3f6] hover:text-[#24706f]"
+                    ? "bg-accent text-canvas"
+                    : "text-secondary hover:bg-raised hover:text-accent"
                 }`}
                 style={{
                   paddingLeft: `${12 + Math.max(section.level - 1, 0) * 14}px`,
@@ -94,37 +94,37 @@ export function KnowledgeDetailView({
 
       <article
         id="knowledge-section-content"
-        className="min-w-0 rounded-lg border border-[#d8dee6] bg-white p-6"
+        className="min-w-0 rounded-xl border border-line bg-panel p-6"
       >
-        <h2 className="mb-5 border-b border-[#d8dee6] pb-4 text-2xl font-bold leading-tight text-[#171a20]">
+        <h2 className="mb-5 border-b border-line pb-4 text-2xl font-bold leading-tight text-ink">
           {activeSection.title}
         </h2>
-        <div className="space-y-5 text-sm leading-7 text-[#3f4754]">
+        <div className="space-y-5 text-sm leading-7 text-secondary">
           <MarkdownContent source={activeSection.content} />
         </div>
       </article>
 
       {contextMenu && (
         <div
-          className="fixed z-50 w-44 overflow-hidden rounded-md border border-[#cfd6df] bg-white py-1 text-sm shadow-lg"
+          className="fixed z-50 w-44 overflow-hidden rounded-md border border-line bg-panel py-1 text-sm shadow-lg"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(event) => event.stopPropagation()}
         >
           <a
             href={editHref}
-            className="block px-3 py-2 text-left text-[#3f4754] hover:bg-[#f0f3f6]"
+            className="block px-3 py-2 text-left text-secondary hover:bg-raised"
           >
             编辑本章节
           </a>
           <a
             href={editHref}
-            className="block px-3 py-2 text-left text-[#3f4754] hover:bg-[#f0f3f6]"
+            className="block px-3 py-2 text-left text-secondary hover:bg-raised"
           >
             新建子章节
           </a>
           <a
             href={editHref}
-            className="block px-3 py-2 text-left text-[#3f4754] hover:bg-[#f0f3f6]"
+            className="block px-3 py-2 text-left text-secondary hover:bg-raised"
           >
             新建章节
           </a>

@@ -13,7 +13,7 @@ export function CommentSection({
   targetType,
 }: CommentSectionProps) {
   return (
-    <section className="mt-6 rounded-lg border border-[#d8dee6] bg-white p-6">
+    <section className="mt-6 rounded-xl border border-line bg-panel p-6">
       <h2 className="text-xl font-bold">评论</h2>
 
       <form action={publishComment} className="mt-4 space-y-3">
@@ -23,12 +23,12 @@ export function CommentSection({
           name="content"
           required
           rows={4}
-          className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+          className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
           placeholder="写下你的想法..."
         />
         <button
           type="submit"
-          className="rounded-md bg-[#24706f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
         >
           发表评论
         </button>
@@ -38,22 +38,22 @@ export function CommentSection({
         {comments.map((comment) => (
           <article
             key={comment.id}
-            className="rounded-md border border-[#e4e8ee] bg-[#fbfcfd] p-4"
+            className="rounded-md border border-line bg-canvas p-4"
           >
-            <div className="flex flex-wrap items-center gap-2 text-xs text-[#667085]">
-              <span className="font-semibold text-[#24706f]">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+              <span className="font-semibold text-accent">
                 {comment.authorName}
               </span>
               <span>{comment.createdAt}</span>
             </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#3f4754]">
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-secondary">
               {comment.content}
             </p>
           </article>
         ))}
 
         {!comments.length && (
-          <p className="rounded-md border border-dashed border-[#cfd6df] p-4 text-sm text-[#667085]">
+          <p className="rounded-md border border-dashed border-line p-4 text-sm text-muted">
             暂无评论。
           </p>
         )}

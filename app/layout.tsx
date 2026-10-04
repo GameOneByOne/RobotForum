@@ -1,22 +1,6 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, Noto_Sans_SC } from "next/font/google";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const notoSansSc = Noto_Sans_SC({
-  subsets: ["latin"],
-  variable: "--font-noto-sans-sc",
-  weight: ["400", "600"],
-});
-
-const jetBrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-});
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Robot Knowledge Platform",
@@ -25,15 +9,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="zh-CN"
-      className={`${inter.variable} ${notoSansSc.variable} ${jetBrainsMono.variable}`}
-    >
-      <body>{children}</body>
+    <html lang="zh-CN">
+      <body>
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   );
 }

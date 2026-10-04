@@ -14,7 +14,7 @@ export const revalidate = 60;
 
 function EmptyState({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-[#d8dee6] bg-white p-5 text-sm text-[#667085]">
+    <div className="rounded-xl border border-line bg-panel p-5 text-sm text-muted">
       {label}
     </div>
   );
@@ -32,10 +32,10 @@ function SectionHeader({
   return (
     <div className="flex items-end justify-between gap-4">
       <div>
-        <p className="text-sm font-semibold text-[#24706f]">{eyebrow}</p>
+        <p className="eyebrow">{eyebrow}</p>
         <h2 className="mt-1 text-2xl font-bold">{title}</h2>
       </div>
-      <Link href={href} className="text-sm font-semibold text-[#24706f]">
+      <Link href={href} className="eyebrow">
         查看全部
       </Link>
     </div>
@@ -51,28 +51,30 @@ export default async function Home() {
   ]);
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
+    <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
 
-      <section className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto w-[80vw] max-w-none px-5 py-12">
-          <h1 className="mt-3 max-w-3xl text-5xl font-bold leading-tight">
+      <section className="page-hero">
+        <div className="mx-auto w-full max-w-7xl px-5 py-12">
+          <p className="eyebrow">BUILD INTELLIGENT TOGETHER</p>
+          <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
             Build Your Own Robot
           </h1>
-          <p className="mt-4 max-w-3xl text-lg leading-8 text-[#5b6472]">
+          <p className="mt-4 max-w-3xl text-lg leading-8 text-muted">
             谁不想急头白脸地做一个属于自己的机器人呢？
           </p>
         </div>
       </section>
 
-      <div className="mx-auto w-[80vw] max-w-none space-y-10 px-5 py-10">
+      <div className="mx-auto w-full max-w-7xl space-y-10 px-5 py-14 sm:py-20">
 
         <section>
           <SectionHeader eyebrow="Knowledge" title="知识库" href="/knowledge" />
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
-            {knowledgeItems.map((item) => (
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {knowledgeItems.map((item, index) => (
               <ContentCard
                 key={item.slug}
+                index={index}
                 title={item.title}
                 description={item.summary}
                 href={`/knowledge/${encodeURIComponent(item.slug)}`}
@@ -93,6 +95,7 @@ export default async function Home() {
                 key={project.slug}
                 title={project.title}
                 description={project.description}
+                href={`/projects/${encodeURIComponent(project.slug)}`}
                 meta={project.author}
                 tags={project.tags}
               />
@@ -125,7 +128,7 @@ export default async function Home() {
                 key={resource.slug}
                 title={resource.title}
                 description={resource.description}
-                href={resource.url}
+                href={`/resources/${encodeURIComponent(resource.slug)}`}
                 meta={resource.type}
                 tags={resource.tags}
               />

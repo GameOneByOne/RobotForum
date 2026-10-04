@@ -19,25 +19,25 @@ export default async function NewResourcePage() {
   const user = await getCurrentUser();
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
+    <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
-      <section className="mx-auto w-[80vw] max-w-3xl px-5 py-8">
-        <Link className="text-sm font-medium text-[#24706f]" href="/resources">
+      <section className="mx-auto w-full max-w-3xl px-5 py-8">
+        <Link className="text-sm font-medium text-accent" href="/resources">
           返回资源目录
         </Link>
         <form
           action={publishResource}
-          className="mt-5 space-y-5 rounded-lg border border-[#d8dee6] bg-white p-6"
+          className="mt-5 space-y-5 rounded-xl border border-line bg-panel p-6"
         >
           <div>
-            <p className="text-sm font-semibold text-[#24706f]">发布资源</p>
+            <p className="text-sm font-semibold text-accent">发布资源</p>
             <h1 className="mt-2 text-3xl font-bold">分享机器人开发资源</h1>
           </div>
 
           {!user && (
-            <div className="rounded-md border border-[#d8dee6] bg-[#f8fafc] p-3 text-sm text-[#667085]">
+            <div className="rounded-md border border-line bg-raised p-3 text-sm text-muted">
               发布资源需要先登录。
-              <Link className="ml-2 font-semibold text-[#24706f]" href="/login">
+              <Link className="ml-2 font-semibold text-accent" href="/login">
                 去登录
               </Link>
             </div>
@@ -48,7 +48,7 @@ export default async function NewResourcePage() {
             <input
               name="title"
               required
-              className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+              className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
             />
           </label>
 
@@ -58,7 +58,7 @@ export default async function NewResourcePage() {
               name="url"
               type="url"
               required
-              className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+              className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
               placeholder="https://..."
             />
           </label>
@@ -67,7 +67,7 @@ export default async function NewResourcePage() {
             <span className="text-sm font-semibold">类型</span>
             <select
               name="type"
-              className="w-full rounded-md border border-[#cfd6df] bg-white px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+              className="w-full rounded-md border border-line bg-panel px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
             >
               {resourceTypes.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -83,7 +83,7 @@ export default async function NewResourcePage() {
               name="description"
               required
               rows={5}
-              className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+              className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
             />
           </label>
 
@@ -91,7 +91,7 @@ export default async function NewResourcePage() {
             <span className="text-sm font-semibold">标签</span>
             <input
               name="tags"
-              className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+              className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
               placeholder="仿真, 论文, 传感器"
             />
           </label>
@@ -99,7 +99,7 @@ export default async function NewResourcePage() {
           <button
             type="submit"
             disabled={!user}
-            className="rounded-md bg-[#24706f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1f6867] disabled:cursor-not-allowed disabled:bg-[#98a2b3]"
+            className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-canvas transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:bg-muted"
           >
             发布资源
           </button>

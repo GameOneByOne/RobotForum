@@ -32,22 +32,22 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
+    <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
-      <header className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto w-[80vw] max-w-none px-5 py-6">
+      <header className="border-b border-line bg-panel">
+        <div className="mx-auto w-full max-w-7xl px-5 py-6">
           <Link
             href={`/posts/${post.slug}`}
-            className="text-sm font-medium text-[#24706f] hover:text-[#1f6867]"
+            className="text-sm font-medium text-accent hover:text-accent-strong"
           >
             返回帖子详情
           </Link>
           <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-[#24706f]">编辑帖子</p>
+              <p className="text-sm font-semibold text-accent">编辑帖子</p>
               <h1 className="mt-1 text-3xl font-bold">Markdown 编辑器</h1>
             </div>
-            <p className="max-w-xl text-sm leading-6 text-[#667085]">
+            <p className="max-w-xl text-sm leading-6 text-muted">
               修改标题、分类和正文后，点击更新发布即可覆盖当前帖子内容。
             </p>
           </div>
@@ -56,23 +56,23 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
 
       <form
         action={updatePost}
-        className="mx-auto w-[80vw] max-w-none space-y-5 px-5 py-6"
+        className="mx-auto w-full max-w-7xl space-y-5 px-5 py-6"
       >
         <input type="hidden" name="slug" value={post.slug} />
 
         {!isSupabaseConfigured && (
-          <div className="rounded-lg border border-[#d8dee6] bg-white p-4 text-sm text-[#667085]">
+          <div className="rounded-xl border border-line bg-panel p-4 text-sm text-muted">
             Supabase 环境变量未配置，更新按钮会在提交时失败；配置完成后可直接写入数据库。
           </div>
         )}
 
-        <section className="grid gap-4 rounded-lg border border-[#d8dee6] bg-white p-5 md:grid-cols-2">
+        <section className="grid gap-4 rounded-xl border border-line bg-panel p-5 md:grid-cols-2">
           <label className="space-y-2">
             <span className="text-sm font-semibold">标题</span>
             <input
               name="title"
               defaultValue={post.title}
-              className="w-full rounded-md border border-[#cfd6df] px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+              className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
               required
             />
           </label>
@@ -82,7 +82,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
             <select
               name="category"
               defaultValue={post.category}
-              className="w-full rounded-md border border-[#cfd6df] bg-white px-3 py-2 text-sm outline-none focus:border-[#24706f] focus:ring-2 focus:ring-[#b7cfcd]"
+              className="w-full rounded-md border border-line bg-panel px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
               required
             >
               {categoryItems.map((item) => (
@@ -99,10 +99,10 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
           initialValue={post.content.join("\n\n")}
         />
 
-        <div className="sticky bottom-0 flex justify-end border-t border-[#d8dee6] bg-[#f4f6f8]/95 py-4">
+        <div className="sticky bottom-0 flex justify-end border-t border-line bg-canvas/95 py-4">
           <button
             type="submit"
-            className="rounded-md bg-[#24706f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1f6867]"
+            className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
           >
             更新发布
           </button>

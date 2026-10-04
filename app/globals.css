@@ -1,19 +1,42 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light;
-  --background: #f7f8fa;
-  --foreground: #18191f;
-  --font-body: var(--font-inter), var(--font-noto-sans-sc), "PingFang SC",
-    "Microsoft YaHei", system-ui, sans-serif;
-  --font-code: var(--font-jetbrains-mono), "SFMono-Regular", Consolas,
-    "Liberation Mono", Menlo, monospace;
+  color-scheme: dark;
+  --background: #10151c;
+  --foreground: #edf3fa;
+  --panel: #18212c;
+  --raised: #202c39;
+  --line: #304152;
+  --secondary: #c2cedb;
+  --muted: #94a5b8;
+  --accent: #59d9f2;
+  --accent-strong: #99edff;
+  --accent-dim: #153542;
+  --danger: #ff9292;
+  --danger-dim: #381f29;
+  --font-body: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-code: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+@theme inline {
+  --color-canvas: var(--background);
+  --color-ink: var(--foreground);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-dim: var(--accent-dim);
+  --color-danger: var(--danger);
+  --color-danger-dim: var(--danger-dim);
 }
 
 html {
   min-height: 100%;
+  scroll-padding-top: 110px;
 }
-
 body {
   min-height: 100vh;
   margin: 0;
@@ -21,11 +44,32 @@ body {
   color: var(--foreground);
   font-family: var(--font-body);
 }
-
 a {
   text-decoration: none;
 }
-
+button,
+summary {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+:where(input, textarea, select) {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+:where(input, textarea)::placeholder {
+  color: var(--muted);
+  opacity: 0.8;
+}
+::selection {
+  background: var(--accent-dim);
+  color: var(--accent-strong);
+}
 code,
 pre,
 kbd,
@@ -33,4 +77,100 @@ samp,
 textarea,
 .font-mono {
   font-family: var(--font-code);
+}
+
+.page-hero {
+  border-bottom: 1px solid var(--line);
+  background: radial-gradient(ellipse at 70% 0%, #16313d55, transparent 65%);
+}
+.page-hero h1 {
+  letter-spacing: -0.04em;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-code);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.eyebrow::after {
+  content: "";
+  width: 32px;
+  height: 1px;
+  background: var(--line);
+}
+.tech-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1c2733, #151e28);
+  box-shadow: 0 8px 24px #00000012;
+  transition:
+    border-color 180ms,
+    box-shadow 180ms,
+    transform 180ms;
+}
+a.tech-card:hover {
+  border-color: var(--accent);
+  box-shadow:
+    0 12px 32px #00000030,
+    0 0 24px #59d9f210;
+  transform: translateY(-3px);
+}
+.tech-tag {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #21303d80;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--secondary);
+  overflow-wrap: anywhere;
+}
+.primary-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  background: #182630;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--foreground);
+  transition: background 180ms;
+}
+.primary-link:hover {
+  background: var(--accent-dim);
+}
+.card-title {
+  overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  a.tech-card:hover {
+    transform: none;
+  }
+}
+@media (max-width: 639px) {
+  .tech-card {
+    padding: 23px;
+  }
 }

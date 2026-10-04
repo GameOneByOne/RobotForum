@@ -11,24 +11,24 @@ export default async function NewKnowledgePage() {
   const user = await getCurrentUser();
 
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#171a20]">
+    <main className="min-h-screen bg-canvas text-ink">
       <SiteHeader />
-      <header className="border-b border-[#d8dee6] bg-white">
-        <div className="mx-auto w-[80vw] max-w-none px-5 py-6">
+      <header className="border-b border-line bg-panel">
+        <div className="mx-auto w-full max-w-7xl px-5 py-6">
           <Link
             href="/knowledge"
-            className="text-sm font-medium text-[#24706f] hover:text-[#1f6867]"
+            className="text-sm font-medium text-accent hover:text-accent-strong"
           >
             返回知识库
           </Link>
           <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-[#24706f]">
+              <p className="text-sm font-semibold text-accent">
                 发布知识库内容
               </p>
               <h1 className="mt-1 text-3xl font-bold">章节式 Markdown 编辑器</h1>
             </div>
-            <p className="max-w-xl text-sm leading-6 text-[#667085]">
+            <p className="max-w-xl text-sm leading-6 text-muted">
               左侧维护章节结构，右侧编辑当前章节正文；每个章节都是独立 Markdown 文档。
             </p>
           </div>
@@ -37,30 +37,30 @@ export default async function NewKnowledgePage() {
 
       <form
         action={publishKnowledge}
-        className="mx-auto w-[80vw] max-w-none space-y-5 px-5 py-6"
+        className="mx-auto w-full max-w-7xl space-y-5 px-5 py-6"
       >
         {!user && (
-          <div className="rounded-lg border border-[#d8dee6] bg-white p-5 text-sm text-[#667085]">
+          <div className="rounded-xl border border-line bg-panel p-5 text-sm text-muted">
             发布知识库需要先登录。
-            <Link className="ml-2 font-semibold text-[#24706f]" href="/login">
+            <Link className="ml-2 font-semibold text-accent" href="/login">
               去登录
             </Link>
           </div>
         )}
 
         {!isSupabaseConfigured && (
-          <div className="rounded-lg border border-[#d8dee6] bg-white p-4 text-sm text-[#667085]">
+          <div className="rounded-xl border border-line bg-panel p-4 text-sm text-muted">
             Supabase 环境变量未配置，发布按钮会在提交时失败；配置完成后可直接写入 knowledge 表。
           </div>
         )}
 
         <KnowledgeEditor />
 
-        <div className="sticky bottom-0 flex justify-end border-t border-[#d8dee6] bg-[#f4f6f8]/95 py-4">
+        <div className="sticky bottom-0 flex justify-end border-t border-line bg-canvas/95 py-4">
           <button
             type="submit"
             disabled={!user}
-            className="rounded-md bg-[#24706f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1f6867] disabled:cursor-not-allowed disabled:bg-[#98a2b3]"
+            className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-canvas transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:bg-muted"
           >
             发布知识库
           </button>
