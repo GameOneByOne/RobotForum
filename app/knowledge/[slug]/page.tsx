@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { getComments } from "@/lib/comments";
 import { deleteKnowledge } from "@/lib/knowledge/actions";
 import { parseKnowledgeSections } from "@/lib/knowledge/sections";
+import { getLearningMetadata, learningLevels } from "@/lib/knowledge/learning-path";
 import { getKnowledgeItemBySlug } from "@/lib/platform/queries";
 
 type KnowledgeDetailPageProps = {
@@ -44,6 +45,8 @@ export default async function KnowledgeDetailPage({
   const sections = parseKnowledgeSections(item.content);
   const encodedSlug = encodeURIComponent(item.slug);
   const canManageKnowledge = Boolean(user && item.authorId === user.id);
+  const learning = getLearningMetadata(item);
+  const levelLabel = learningLevels.find((level) => level.value === learning.level)!.label;
 
   return (
     <main className="min-h-screen bg-canvas text-ink">
@@ -58,6 +61,7 @@ export default async function KnowledgeDetailPage({
           </Link>
           <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
             <div>
+              <p className="eyebrow">{levelLabel} · {learning.order ? `第 ${String(learning.order).padStart(2, "0")} 课` : "拓展阅读"}</p>
               <h1 className="mt-2 text-3xl font-bold">{item.title}</h1>
               {item.summary && (
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">

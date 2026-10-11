@@ -6,6 +6,7 @@ import { useMemo, useRef, useState } from "react";
 import { MarkdownContent } from "@/components/markdown-content";
 import { getTagColorClass } from "@/lib/tag-colors";
 import type { KnowledgeSection } from "@/lib/knowledge/sections";
+import { getLearningMetadata, isLearningMetadataTag, learningLevels, withLearningMetadata, type LearningLevel } from "@/lib/knowledge/learning-path";
 
 type EditableKnowledgeSection = Omit<KnowledgeSection, "level">;
 
@@ -15,6 +16,7 @@ type KnowledgeEditorProps = {
   initialTitle?: string;
   initialSummary?: string;
   initialTags?: string[];
+  initialDifficulty?: string;
   initialSections?: KnowledgeSection[];
 };
 
@@ -319,12 +321,16 @@ export function KnowledgeEditor({
   initialTitle = "未命名知识库",
   initialSummary = "",
   initialTags = [],
+  initialDifficulty,
   initialSections,
 }: KnowledgeEditorProps) {
   const [currentSlug, setCurrentSlug] = useState(initialSlug);
   const [knowledgeTitle, setKnowledgeTitle] = useState(initialTitle);
   const [summary, setSummary] = useState(initialSummary);
-  const [tags, setTags] = useState<string[]>(initialTags);
+  const initialLearning = getLearningMetadata({ tags: initialTags, difficulty: initialDifficulty });
+  const [difficulty, setDifficulty] = useState<LearningLevel>(initialLearning.level);
+  const [learningOrder, setLearningOrder] = useState(initialLearning.order?.toString() ?? "");
+  const [tags, setTags] = useState<string[]>(initialTags.filter((tag) => !isLearningMetadataTag(tag)));
   const [tagInput, setTagInput] = useState("");
   const [sections, setSections] = useState<EditableKnowledgeSection[]>(
     toEditableSections(initialSections),
@@ -878,7 +884,7 @@ export function KnowledgeEditor({
       <input type="hidden" name="slug" value={currentSlug} />
       <input type="hidden" name="content" value={combinedMarkdown} />
       <input type="hidden" name="sections" value={JSON.stringify(sections)} />
-      <input type="hidden" name="tags" value={JSON.stringify(tags)} />
+      <input type="hidden" name="tags" value={JSON.stringify(withLearningMetadata(tags, difficulty, Number(learningOrder) || null))} />
 
       <section className="space-y-4 rounded-xl border border-line bg-panel p-5">
         <label className="block space-y-2">
@@ -902,6 +908,19 @@ export function KnowledgeEditor({
             placeholder="用一两句话说明这篇知识库适合解决什么问题。"
           />
         </label>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block space-y-2">
+            <span className="text-sm font-semibold">学习等级</span>
+            <select name="difficulty" value={difficulty} onChange={(event) => setDifficulty(event.target.value as LearningLevel)} className="w-full rounded-md border border-line bg-panel px-3 py-2 text-sm">
+              {learningLevels.map((level) => <option key={level.value} value={level.value}>{level.label}</option>)}
+            </select>
+          </label>
+          <label className="block space-y-2">
+            <span className="text-sm font-semibold">学习顺序</span>
+            <input name="learningOrder" type="number" min="1" max="9999" step="1" value={learningOrder} onChange={(event) => setLearningOrder(event.target.value)} placeholder="留空作为拓展阅读" className="w-full rounded-md border border-line bg-panel px-3 py-2 text-sm" />
+          </label>
+        </div>
 
         <div className="space-y-2">
           <span className="text-sm font-semibold">知识库标签</span>
