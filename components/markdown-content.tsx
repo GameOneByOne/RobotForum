@@ -1,12 +1,15 @@
 "use client";
 
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { isValidElement } from "react";
+import { Children, cloneElement, isValidElement } from "react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import rehypeSanitize from "rehype-sanitize";
+import { MarkdownCode } from "@/components/markdown-code";
+import { MarkdownImage } from "@/components/markdown-image";
+import { readingOutline } from "@/lib/markdown/outline";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
@@ -35,107 +38,13 @@ type CodeProps = ComponentPropsWithoutRef<"code"> & {
   inline?: boolean;
 };
 
-type ImagePlacement = "block" | "left" | "right";
-
-type ImageOptions = {
-  alt: string;
-  placement: ImagePlacement;
-  size: number;
-};
-
 const codeTabsBlockPattern = /^:::code-tabs\s*\n([\s\S]*?)\n:::\s*$/gm;
 const fencedCodePattern =
   /^```([A-Za-z0-9_-]+)?(?:\s+title=(?:"([^"]+)"|'([^']+)'|([^\s]+)))?\s*\n([\s\S]*?)\n```\s*$/gm;
 
-function hasMultilineContent(children: ReactNode) {
-  return String(children).includes("\n");
-}
-
-function normalizeImagePlacement(value: string | undefined): ImagePlacement {
-  const placement = value?.trim().toLowerCase();
-
-  if (placement === "left" || placement === "inline-left" || placement === "左") {
-    return "left";
-  }
-
-  if (placement === "right" || placement === "inline-right" || placement === "右") {
-    return "right";
-  }
-
-  return "block";
-}
-
-function parseImageOptions(alt = ""): ImageOptions {
-  const [label = "", sizeValue, placementValue] = alt.split("|");
-  const parsedSize = Number.parseFloat(sizeValue ?? "");
-  const size = Number.isFinite(parsedSize)
-    ? Math.min(Math.max(parsedSize, 0), 100)
-    : 100;
-
-  return {
-    alt: label.trim(),
-    placement: normalizeImagePlacement(placementValue),
-    size,
-  };
-}
-
-function CodeBlock({
-  className,
-  children,
-  size = "normal",
-  ...props
-}: CodeProps & Pick<MarkdownContentProps, "size">) {
-  const match = /language-(\w+)/.exec(className ?? "");
-  const language = match?.[1];
-  const code = String(children).replace(/\n$/, "");
-  const isLarge = size === "large";
-
-  if (language) {
-    return (
-      <div className="overflow-hidden rounded-xl border border-line bg-canvas">
-        <div className="flex min-h-9 items-center justify-between border-b border-line bg-raised px-3 text-xs font-medium text-secondary">
-          <span>代码</span>
-          <span className="font-mono uppercase">{language}</span>
-        </div>
-        <SyntaxHighlighter
-          {...props}
-          language={language}
-          PreTag="div"
-          customStyle={{
-            margin: 0,
-            background: "#10151c",
-            padding: "16px",
-            fontSize: isLarge ? "18px" : "13px",
-            lineHeight: "1.7",
-          }}
-          codeTagProps={{
-            style: {
-              fontFamily:
-                "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-            },
-          }}
-          style={oneDark}
-          wrapLongLines
-        >
-          {code}
-        </SyntaxHighlighter>
-      </div>
-    );
-  }
-
+function CodeBlock({ children, className, ...props }: CodeProps) {
   return (
-    <code
-      {...props}
-      className={
-        hasMultilineContent(children)
-          ? `block whitespace-pre-wrap font-mono text-ink ${
-              isLarge ? "text-lg leading-8" : "text-sm leading-7"
-            }`
-          : `rounded bg-raised px-1.5 py-0.5 font-mono text-ink ${
-              isLarge ? "text-lg" : "text-sm"
-            }`
-      }
-    >
+    <code {...props} className={className}>
       {children}
     </code>
   );
@@ -143,70 +52,100 @@ function CodeBlock({
 
 function PreBlock({
   children,
-  ...props
-}: ComponentPropsWithoutRef<"pre">) {
+}: ComponentPropsWithoutRef<"pre"> & { node?: unknown }) {
   if (
-    isValidElement<{ className?: string }>(children) &&
-    /language-(\w+)/.test(children.props.className ?? "")
-  ) {
-    return children;
-  }
-
+    !isValidElement<{
+      className?: string;
+      children?: ReactNode;
+      "data-title"?: string;
+    }>(children)
+  )
+    return <pre>{children}</pre>;
+  if (/math-display/.test(children.props.className || ""))
+    return <div className="markdown-formula">{children}</div>;
+  const language =
+    /language-([\w+-]+)/.exec(children.props.className || "")?.[1] || "text";
   return (
-    <pre
-      {...props}
-      className="overflow-x-auto rounded-xl border border-line bg-canvas p-4"
-    >
-      {children}
-    </pre>
+    <MarkdownCode
+      key={String(children.props.children)}
+      code={String(children.props.children).replace(/\n$/, "")}
+      language={language}
+      title={children.props["data-title"]}
+    />
   );
 }
 
-function MarkdownImage({
-  alt,
-  src,
-  title,
-}: ComponentPropsWithoutRef<"img">) {
-  const options = parseImageOptions(alt);
-  const width = `${options.size}%`;
-  const image = (
-    // Markdown images can point to arbitrary user-provided remote URLs.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      alt={options.alt}
-      src={src}
-      title={title}
-      className="h-auto w-full rounded-md border border-line"
-    />
-  );
+function nodeText(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (isValidElement<{ children?: ReactNode }>(node))
+    return nodeText(node.props.children);
+  return Children.toArray(node)
+    .map((child) =>
+      isValidElement<{ children?: ReactNode }>(child)
+        ? nodeText(child.props.children)
+        : String(child),
+    )
+    .join("");
+}
 
-  if (options.placement === "left") {
-    return (
-      <span
-        className="float-left mr-4 mb-3 inline-block max-w-full"
-        style={{ width }}
-      >
-        {image}
-      </span>
-    );
+function Callout({ children }: ComponentPropsWithoutRef<"blockquote">) {
+  const marker = /^\[!(NOTE|TIP|WARNING|CONCEPT|EXAMPLE|MISCONCEPTION)\]\s*/;
+  const text = nodeText(children).trimStart();
+  const kind = marker.exec(text)?.[1];
+  if (!kind) return <blockquote>{children}</blockquote>;
+  const labels: Record<string, string> = {
+    NOTE: "说明",
+    TIP: "提示",
+    WARNING: "注意",
+    CONCEPT: "概念解释",
+    EXAMPLE: "具体例子",
+    MISCONCEPTION: "常见误解",
+  };
+  function strip(node: ReactNode): ReactNode {
+    if (typeof node === "string" && marker.test(node.trimStart())) {
+      return node.trimStart().replace(marker, "");
+    }
+    if (isValidElement<{ children?: ReactNode }>(node))
+      return cloneElement(node, {}, Children.map(node.props.children, strip));
+    return node;
   }
-
-  if (options.placement === "right") {
-    return (
-      <span
-        className="float-right mb-3 ml-4 inline-block max-w-full"
-        style={{ width }}
-      >
-        {image}
-      </span>
-    );
-  }
-
   return (
-    <span className="mx-auto my-4 block max-w-full" style={{ width }}>
-      {image}
-    </span>
+    <aside
+      className={`markdown-callout markdown-callout-${kind.toLowerCase()}`}
+      aria-label={labels[kind]}
+    >
+      <strong className="markdown-callout-title">{labels[kind]}</strong>
+      {Children.map(children, strip)}
+    </aside>
   );
+}
+
+// Expose fence titles only as text, with user HTML still sanitized before math rendering.
+function remarkCodeTitles() {
+  return (tree: {
+    type: string;
+    meta?: string;
+    data?: { hProperties?: Record<string, unknown> };
+    children?: unknown[];
+  }) => {
+    function visit(node: typeof tree) {
+      if (node.type === "code" && node.meta) {
+        const title = /(?:^|\s)title=(?:"([^"]+)"|'([^']+)'|(\S+))/.exec(
+          node.meta,
+        );
+        if (title)
+          node.data = {
+            ...node.data,
+            hProperties: {
+              ...node.data?.hProperties,
+              "data-title": title[1] || title[2] || title[3],
+            },
+          };
+      }
+      node.children?.forEach((child) => visit(child as typeof tree));
+    }
+    visit(tree);
+  };
 }
 
 function parseCodeTabs(value: string): CodeTab[] {
@@ -310,38 +249,49 @@ function CodeTabs({
           );
         })}
       </div>
-      <SyntaxHighlighter
+      <MarkdownCode
+        key={`${activeIndex}-${activeTab.title}`}
+        code={activeTab.code}
         language={activeTab.language}
-        PreTag="div"
-        customStyle={{
-          margin: 0,
-          background: "#10151c",
-          padding: "16px",
-          fontSize: isLarge ? "18px" : "13px",
-          lineHeight: "1.7",
-        }}
-        codeTagProps={{
-          style: {
-            fontFamily:
-              "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-          },
-        }}
-        style={oneDark}
-        wrapLongLines
-      >
-        {activeTab.code}
-      </SyntaxHighlighter>
+        title={activeTab.title}
+        large={isLarge}
+      />
     </div>
   );
 }
 
-function MarkdownRenderer({ size = "normal", source }: MarkdownContentProps) {
-  const isLarge = size === "large";
-
+function MarkdownRenderer({
+  size = "normal",
+  source,
+  headingOffset = 0,
+}: MarkdownContentProps & { headingOffset?: number }) {
+  const outline = readingOutline(source, headingOffset);
+  const schema = {
+    ...defaultSchema,
+    attributes: {
+      ...defaultSchema.attributes,
+      code: [
+        ...(defaultSchema.attributes?.code || []),
+        ["className", /^language-./, "math-inline", "math-display"],
+        "data-title",
+      ],
+    },
+  };
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkBreaks]}
-      rehypePlugins={[rehypeSanitize]}
+      remarkPlugins={[
+        remarkGfm,
+        remarkBreaks,
+        [remarkMath, { singleDollarTextMath: false }],
+        remarkCodeTitles,
+      ]}
+      rehypePlugins={[
+        [rehypeSanitize, schema],
+        [
+          rehypeKatex,
+          { trust: false, strict: "ignore", maxExpand: 1000, maxSize: 10 },
+        ],
+      ]}
       components={{
         a: (props) => (
           <a
@@ -351,59 +301,59 @@ function MarkdownRenderer({ size = "normal", source }: MarkdownContentProps) {
             rel="noreferrer"
           />
         ),
-        blockquote: (props) => (
-          <blockquote
-            {...props}
-            className="border-l-4 border-accent-dim pl-4 text-secondary"
-          />
+        blockquote: Callout,
+        code: ({ node: _node, ...props }) => <CodeBlock {...props} />,
+        img: ({ node: _node, ...props }) => (
+          <MarkdownImage key={String(props.src)} {...props} />
         ),
-        code: (props) => <CodeBlock {...props} size={size} />,
-        img: MarkdownImage,
         pre: PreBlock,
-        h1: (props) => (
+        h1: ({ node, ...props }) => (
           <h1
             {...props}
-            className={`font-bold leading-tight ${
-              isLarge ? "text-5xl" : "text-3xl"
-            }`}
+            id={outline.find((h) => h.line === node?.position?.start.line)?.id}
           />
         ),
-        h2: (props) => (
+        h2: ({ node, ...props }) => (
           <h2
             {...props}
-            className={`font-bold leading-tight ${
-              isLarge ? "text-4xl" : "text-2xl"
-            }`}
+            id={outline.find((h) => h.line === node?.position?.start.line)?.id}
           />
         ),
-        h3: (props) => (
+        h3: ({ node, ...props }) => (
           <h3
             {...props}
-            className={`font-semibold leading-tight ${
-              isLarge ? "text-3xl" : "text-xl"
-            }`}
+            id={outline.find((h) => h.line === node?.position?.start.line)?.id}
+          />
+        ),
+        h4: ({ node, ...props }) => (
+          <h4
+            {...props}
+            id={outline.find((h) => h.line === node?.position?.start.line)?.id}
+          />
+        ),
+        h5: ({ node, ...props }) => (
+          <h5
+            {...props}
+            id={outline.find((h) => h.line === node?.position?.start.line)?.id}
+          />
+        ),
+        h6: ({ node, ...props }) => (
+          <h6
+            {...props}
+            id={outline.find((h) => h.line === node?.position?.start.line)?.id}
           />
         ),
         ol: (props) => <ol {...props} className="list-decimal pl-6" />,
         ul: (props) => <ul {...props} className="list-disc pl-6" />,
-        table: (props) => (
-          <div className="overflow-x-auto">
-            <table
-              {...props}
-              className={`w-full min-w-[520px] border-collapse text-left ${
-                isLarge ? "text-lg" : "text-sm"
-              }`}
-            />
+        table: ({ node: _node, ...props }) => (
+          <div
+            className="markdown-table-scroll"
+            role="region"
+            aria-label="数据表格，可横向滚动"
+            tabIndex={0}
+          >
+            <table {...props} />
           </div>
-        ),
-        th: (props) => (
-          <th
-            {...props}
-            className="border border-line bg-raised px-3 py-2 font-semibold"
-          />
-        ),
-        td: (props) => (
-          <td {...props} className="border border-line px-3 py-2" />
         ),
       }}
     >
@@ -412,22 +362,44 @@ function MarkdownRenderer({ size = "normal", source }: MarkdownContentProps) {
   );
 }
 
-export function MarkdownContent({ size = "normal", source }: MarkdownContentProps) {
+export function MarkdownContent({
+  size = "normal",
+  source,
+}: MarkdownContentProps) {
   const segments = parseMarkdownSegments(source);
 
   return (
-    <>
-      {segments.map((segment, index) =>
-        segment.type === "code-tabs" ? (
-          <CodeTabs key={`code-tabs-${index}`} size={size} tabs={segment.tabs} />
-        ) : (
+    <div
+      className={`markdown-body${size === "large" ? " markdown-body-large" : ""}`}
+    >
+      {segments.map((segment, index) => {
+        if (segment.type === "code-tabs")
+          return (
+            <CodeTabs
+              key={`code-tabs-${index}`}
+              size={size}
+              tabs={segment.tabs}
+            />
+          );
+        const offset = segments
+          .slice(0, index)
+          .reduce(
+            (count, previous) =>
+              count +
+              (previous.type === "markdown"
+                ? readingOutline(previous.content).length
+                : 0),
+            0,
+          );
+        return (
           <MarkdownRenderer
             key={`markdown-${index}`}
             size={size}
             source={segment.content}
+            headingOffset={offset}
           />
-        ),
-      )}
-    </>
+        );
+      })}
+    </div>
   );
 }
