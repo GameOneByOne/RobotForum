@@ -6,43 +6,14 @@ type VisitorStats = {
   error?: string;
   onlineVisitors: number;
   visits24h: number;
+  visitsToday?: number;
 };
-
-const visitorStorageKey = "robot-forum-visitor-id";
-
-function createVisitorId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `visitor-${Date.now().toString(36)}-${Math.random()
-    .toString(36)
-    .slice(2, 14)}`;
-}
-
-function getVisitorId() {
-  try {
-    const existing = localStorage.getItem(visitorStorageKey);
-
-    if (existing) {
-      return existing;
-    }
-
-    const nextId = createVisitorId();
-    localStorage.setItem(visitorStorageKey, nextId);
-
-    return nextId;
-  } catch {
-    return createVisitorId();
-  }
-}
 
 async function sendVisitorSignal(event: "visit" | "heartbeat") {
   const response = await fetch("/api/visitors", {
     body: JSON.stringify({
       event,
       path: window.location.pathname,
-      visitorId: getVisitorId(),
     }),
     cache: "no-store",
     headers: {
@@ -90,10 +61,23 @@ export function VisitorStatsPanel() {
     const interval = window.setInterval(() => {
       void updateStats("heartbeat");
     }, 60_000);
+    let midnightTimeout: number;
+    function scheduleMidnightRefresh() {
+      const dayMs = 24 * 60 * 60 * 1000;
+      const untilMidnight = dayMs - ((Date.now() + 8 * 60 * 60 * 1000) % dayMs);
+      midnightTimeout = window.setTimeout(() => {
+        // Do not display yesterday's count while waiting for the next heartbeat.
+        setStats((previous) => ({ ...previous, visitsToday: 0, visits24h: 0 }));
+        void updateStats("heartbeat");
+        scheduleMidnightRefresh();
+      }, untilMidnight);
+    }
+    scheduleMidnightRefresh();
 
     return () => {
       isMounted = false;
       window.clearInterval(interval);
+      window.clearTimeout(midnightTimeout);
     };
   }, []);
 
@@ -103,9 +87,9 @@ export function VisitorStatsPanel() {
       className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs font-medium text-muted"
     >
       <span className="whitespace-nowrap">
-        24H访问人数{" "}
+        今日访问人数{" "}
         <strong className="font-bold text-accent">
-          {stats.visits24h.toLocaleString("zh-CN")}
+          {(stats.visitsToday ?? stats.visits24h).toLocaleString("zh-CN")}
         </strong>
       </span>
       <span className="whitespace-nowrap">
