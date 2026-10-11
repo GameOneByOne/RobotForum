@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { parseLearningInput } from "@/lib/knowledge/learning-path";
 
 type KnowledgeRecord = {
   id: string;
@@ -144,7 +145,8 @@ export async function publishKnowledge(formData: FormData): Promise<void> {
   const title = normalizeText(formData.get("title"));
   const summary = normalizeText(formData.get("summary"));
   const content = normalizeText(formData.get("content"));
-  const tags = parseTags(formData.get("tags"));
+  const learning = parseLearningInput(formData, parseTags(formData.get("tags")));
+  const tags = learning.tags;
 
   validateKnowledgeInput(title, content);
 
@@ -160,7 +162,7 @@ export async function publishKnowledge(formData: FormData): Promise<void> {
       summary: summary || createSummary(content),
       content,
       type: "guide",
-      difficulty: "beginner",
+      difficulty: learning.level,
       status: "published",
       view_count: 0,
       like_count: 0,
@@ -211,7 +213,8 @@ export async function saveKnowledgeUpdate(
   const title = normalizeText(formData.get("title"));
   const summary = normalizeText(formData.get("summary"));
   const content = normalizeText(formData.get("content"));
-  const tags = parseTags(formData.get("tags"));
+  const learning = parseLearningInput(formData, parseTags(formData.get("tags")));
+  const tags = learning.tags;
 
   if (!id && !slug) {
     throw new Error("缺少知识库标识，无法更新。");
@@ -230,6 +233,7 @@ export async function saveKnowledgeUpdate(
       summary: summary || createSummary(content),
       content,
       status: "published",
+      difficulty: learning.level,
     })
     .select("id");
   const { data, error } = await (id
