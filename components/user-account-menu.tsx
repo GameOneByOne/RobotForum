@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import Link from "next/link";
 
 import { signOut } from "@/lib/auth/actions";
 import type { AuthUser } from "@/lib/auth/session";
+import { getGuestName } from "@/lib/auth/guest";
 
 function Avatar({ url, name }: { url: string | null; name: string }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
@@ -37,13 +39,14 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
   );
 }
 
-export function UserAccountMenu({ user }: { user: AuthUser }) {
+export function UserAccountMenu({ user }: { user: AuthUser | null }) {
   const [open, setOpen] = useState(false);
+  const [guestName, setGuestName] = useState("游客");
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   const titleId = useId();
-  const name = user.displayName || user.email.split("@")[0] || "注册用户";
+  const name = user ? user.displayName || user.email.split("@")[0] || "注册用户" : guestName;
 
   useEffect(() => {
     if (!open) return;
@@ -72,7 +75,7 @@ export function UserAccountMenu({ user }: { user: AuthUser }) {
   return (
     <div
       ref={containerRef}
-      className="relative"
+      className="relative shrink-0"
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
@@ -83,10 +86,13 @@ export function UserAccountMenu({ user }: { user: AuthUser }) {
         aria-label={`${open ? "收起" : "查看"}${name}的账号信息`}
         aria-expanded={open}
         aria-controls={panelId}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          if (!user && !open) setGuestName(getGuestName());
+          setOpen((value) => !value);
+        }}
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent-dim bg-accent-dim transition-shadow duration-200 hover:border-accent hover:shadow-[0_0_0_3px_#153542,0_0_16px_4px_#8de8ff80] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/50 motion-reduce:transition-none ${open ? "shadow-[0_0_0_3px_#153542,0_0_16px_4px_#8de8ff80]" : ""}`}
       >
-        <Avatar url={user.avatarUrl ?? null} name={name} />
+        <Avatar url={user?.avatarUrl ?? null} name={name} />
       </button>
 
       {open && (
@@ -95,38 +101,67 @@ export function UserAccountMenu({ user }: { user: AuthUser }) {
           aria-labelledby={titleId}
           className="absolute right-0 top-full z-30 mt-3 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-line bg-panel p-5 shadow-[0_12px_40px_#0f172a1f]"
         >
-          <p className="text-xs font-medium text-muted">我的账号</p>
+          <p className="text-xs font-medium text-muted">{user ? "我的账号" : "游客"}</p>
           <h2 id={titleId} className="mt-1 break-words text-base font-semibold text-ink">
             {name}
           </h2>
-          <dl className="mt-4 text-sm">
-            <div className="border-b border-raised pb-4">
-              <dt className="text-xs text-muted">账号</dt>
-              <dd className="mt-1 break-all text-secondary">{user.email}</dd>
-            </div>
-            <div className="grid grid-cols-2 gap-3 py-4">
-              <div className="rounded-xl bg-accent-dim p-3">
-                <dt className="text-xs text-muted">等级</dt>
-                <dd className="mt-1 font-semibold text-accent">
-                  {user.level == null ? "暂未开通" : `Lv.${user.level}`}
-                </dd>
+          {user ? (
+            <>
+              <dl className="mt-4 text-sm">
+                <div className="border-b border-raised pb-4">
+                  <dt className="text-xs text-muted">账号</dt>
+                  <dd className="mt-1 break-all text-secondary">{user.email}</dd>
+                </div>
+                <div className="grid grid-cols-2 gap-3 py-4">
+                  <div className="rounded-xl bg-accent-dim p-3">
+                    <dt className="text-xs text-muted">等级</dt>
+                    <dd className="mt-1 font-semibold text-accent">
+                      {user.level == null ? "暂未开通" : `Lv.${user.level}`}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl bg-raised p-3">
+                    <dt className="text-xs text-muted">积分</dt>
+                    <dd className="mt-1 font-semibold text-secondary">
+                      {user.points == null ? "暂未开通" : user.points.toLocaleString("zh-CN")}
+                    </dd>
+                  </div>
+                </div>
+              </dl>
+              <form action={signOut} className="border-t border-raised pt-3">
+                <button
+                  type="submit"
+                  className="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-muted hover:bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  退出登录
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <div className="my-4 border-y border-line py-4">
+                <h3 className="text-sm font-medium text-ink">温馨提示</h3>
+                <p className="mt-2 text-sm leading-6 text-secondary">
+                  当前处于游客状态，可以评论、留言、点赞，但不能发布内容。
+                </p>
               </div>
-              <div className="rounded-xl bg-raised p-3">
-                <dt className="text-xs text-muted">积分</dt>
-                <dd className="mt-1 font-semibold text-secondary">
-                  {user.points == null ? "暂未开通" : user.points.toLocaleString("zh-CN")}
-                </dd>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="rounded-md border border-line px-3 py-2 text-sm font-medium text-secondary hover:bg-raised"
+                >
+                  登录
+                </Link>
+                <Link
+                  href="/login?mode=register"
+                  onClick={() => setOpen(false)}
+                  className="rounded-md bg-accent px-3 py-2 text-sm font-semibold text-canvas hover:bg-accent-strong"
+                >
+                  注册
+                </Link>
               </div>
-            </div>
-          </dl>
-          <form action={signOut} className="border-t border-raised pt-3">
-            <button
-              type="submit"
-              className="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-muted hover:bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              退出登录
-            </button>
-          </form>
+            </>
+          )}
         </section>
       )}
     </div>
