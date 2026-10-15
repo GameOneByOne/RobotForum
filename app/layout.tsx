@@ -2,6 +2,7 @@ import "katex/dist/katex.min.css";
 import type { Metadata } from "next";
 import "./globals.css";
 import { SiteFooter } from "@/components/site-footer";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Robot Knowledge Platform",
@@ -16,6 +17,7 @@ export default function RootLayout({
       <body>
         {children}
         <SiteFooter />
+        <Analytics />
       </body>
     </html>
   );
