@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/components/language-provider";
+
 import { useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -15,6 +17,7 @@ export function MarkdownCode({
   title?: string;
   large?: boolean;
 }) {
+  const { t } = useI18n();
   const [copyState, setCopyState] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [wrap, setWrap] = useState(false);
@@ -34,7 +37,11 @@ export function MarkdownCode({
       <div className="markdown-code-toolbar">
         <span className="markdown-code-label">
           {title ||
-            (isCommand ? "终端命令" : isOutput ? "文本 / 输出" : "代码示例")}
+            (isCommand
+              ? t("终端命令")
+              : isOutput
+                ? t("文本 / 输出")
+                : t("代码示例"))}
         </span>
         <span className="markdown-code-language">{language}</span>
         <button
@@ -42,20 +49,20 @@ export function MarkdownCode({
           aria-pressed={wrap}
           onClick={() => setWrap(!wrap)}
         >
-          {wrap ? "取消换行" : "自动换行"}
+          {wrap ? t("取消换行") : t("自动换行")}
         </button>
         <button type="button" onClick={copy}>
-          复制
+          {t("复制")}
         </button>
         <span className="markdown-code-status" role="status">
-          {copyState}
+          {t(copyState)}
         </span>
       </div>
       <div
         className="markdown-code-scroll"
         style={{ maxHeight: long && !expanded ? 360 : undefined }}
         tabIndex={0}
-        aria-label="代码内容，可滚动"
+        aria-label={t("代码内容，可滚动")}
       >
         <SyntaxHighlighter
           language={language === "output" ? "text" : language}
@@ -85,8 +92,8 @@ export function MarkdownCode({
           onClick={() => setExpanded(!expanded)}
         >
           {expanded
-            ? "收起代码"
-            : `展开完整代码 · ${code.split("\n").length} 行`}
+            ? t("收起代码")
+            : t("展开完整代码 · {0} 行", { "0": code.split("\n").length })}
         </button>
       )}
     </div>

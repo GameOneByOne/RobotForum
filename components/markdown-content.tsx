@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/components/language-provider";
+
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { Children, cloneElement, isValidElement } from "react";
 import { useState } from "react";
@@ -89,6 +91,7 @@ function nodeText(node: ReactNode): string {
 }
 
 function Callout({ children }: ComponentPropsWithoutRef<"blockquote">) {
+  const { t } = useI18n();
   const marker = /^\[!(NOTE|TIP|WARNING|CONCEPT|EXAMPLE|MISCONCEPTION)\]\s*/;
   const text = nodeText(children).trimStart();
   const kind = marker.exec(text)?.[1];
@@ -112,9 +115,9 @@ function Callout({ children }: ComponentPropsWithoutRef<"blockquote">) {
   return (
     <aside
       className={`markdown-callout markdown-callout-${kind.toLowerCase()}`}
-      aria-label={labels[kind]}
+      aria-label={t(labels[kind])}
     >
-      <strong className="markdown-callout-title">{labels[kind]}</strong>
+      <strong className="markdown-callout-title">{t(labels[kind])}</strong>
       {Children.map(children, strip)}
     </aside>
   );
@@ -265,6 +268,7 @@ function MarkdownRenderer({
   source,
   headingOffset = 0,
 }: MarkdownContentProps & { headingOffset?: number }) {
+  const { t } = useI18n();
   const outline = readingOutline(source, headingOffset);
   const schema = {
     ...defaultSchema,
@@ -349,7 +353,7 @@ function MarkdownRenderer({
           <div
             className="markdown-table-scroll"
             role="region"
-            aria-label="数据表格，可横向滚动"
+            aria-label={t("数据表格，可横向滚动")}
             tabIndex={0}
           >
             <table {...props} />

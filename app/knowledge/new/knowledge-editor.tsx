@@ -1,12 +1,25 @@
 "use client";
 
-import type { ClipboardEvent, DragEvent, KeyboardEvent, MouseEvent } from "react";
+import { useI18n } from "@/components/language-provider";
+
+import type {
+  ClipboardEvent,
+  DragEvent,
+  KeyboardEvent,
+  MouseEvent,
+} from "react";
 import { useMemo, useRef, useState } from "react";
 
 import { MarkdownContent } from "@/components/markdown-content";
 import { getTagColorClass } from "@/lib/tag-colors";
 import type { KnowledgeSection } from "@/lib/knowledge/sections";
-import { getLearningMetadata, isLearningMetadataTag, learningLevels, withLearningMetadata, type LearningLevel } from "@/lib/knowledge/learning-path";
+import {
+  getLearningMetadata,
+  isLearningMetadataTag,
+  learningLevels,
+  withLearningMetadata,
+  type LearningLevel,
+} from "@/lib/knowledge/learning-path";
 
 type EditableKnowledgeSection = Omit<KnowledgeSection, "level">;
 
@@ -229,7 +242,12 @@ function imageFilesFromDataTransfer(dataTransfer: DataTransfer) {
 }
 
 function imageAltText(fileName: string) {
-  return fileName.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || "image";
+  return (
+    fileName
+      .replace(/\.[^.]+$/, "")
+      .replace(/[_-]+/g, " ")
+      .trim() || "image"
+  );
 }
 
 function isHttpUrl(value: string) {
@@ -265,7 +283,10 @@ function imageMarkdownFromUrl(url: string) {
 }
 
 function optimizeCloudinaryImageUrl(url: string) {
-  if (!url.includes("/image/upload/") || /\/image\/upload\/[^/]*f_auto/.test(url)) {
+  if (
+    !url.includes("/image/upload/") ||
+    /\/image\/upload\/[^/]*f_auto/.test(url)
+  ) {
     return url;
   }
 
@@ -318,22 +339,40 @@ function hasImageDropPayload(dataTransfer: DataTransfer) {
 export function KnowledgeEditor({
   initialKnowledgeId = "",
   initialSlug = "",
-  initialTitle = "未命名知识库",
+  initialTitle,
   initialSummary = "",
   initialTags = [],
   initialDifficulty,
   initialSections,
 }: KnowledgeEditorProps) {
+  const { t } = useI18n();
   const [currentSlug, setCurrentSlug] = useState(initialSlug);
-  const [knowledgeTitle, setKnowledgeTitle] = useState(initialTitle);
+  const [knowledgeTitle, setKnowledgeTitle] = useState(
+    initialTitle ?? t("未命名知识库"),
+  );
   const [summary, setSummary] = useState(initialSummary);
-  const initialLearning = getLearningMetadata({ tags: initialTags, difficulty: initialDifficulty });
-  const [difficulty, setDifficulty] = useState<LearningLevel>(initialLearning.level);
-  const [learningOrder, setLearningOrder] = useState(initialLearning.order?.toString() ?? "");
-  const [tags, setTags] = useState<string[]>(initialTags.filter((tag) => !isLearningMetadataTag(tag)));
+  const initialLearning = getLearningMetadata({
+    tags: initialTags,
+    difficulty: initialDifficulty,
+  });
+  const [difficulty, setDifficulty] = useState<LearningLevel>(
+    initialLearning.level,
+  );
+  const [learningOrder, setLearningOrder] = useState(
+    initialLearning.order?.toString() ?? "",
+  );
+  const [tags, setTags] = useState<string[]>(
+    initialTags.filter((tag) => !isLearningMetadataTag(tag)),
+  );
   const [tagInput, setTagInput] = useState("");
-  const [sections, setSections] = useState<EditableKnowledgeSection[]>(
-    toEditableSections(initialSections),
+  const [sections, setSections] = useState<EditableKnowledgeSection[]>(() =>
+    initialSections?.length
+      ? toEditableSections(initialSections)
+      : defaultSections.map((section) => ({
+          ...section,
+          title: t(section.title),
+          content: `${t("请在这里编写章节内容。")}\n\n\`\`\`ts\nconsole.log("robot knowledge");\n\`\`\`\n`,
+        })),
   );
   const [activeSectionId, setActiveSectionId] = useState(
     initialSections?.[0]?.id ?? firstSectionId,
@@ -355,11 +394,7 @@ export function KnowledgeEditor({
     [sections],
   );
   const wordCount = useMemo(
-    () =>
-      activeSection.content
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean).length,
+    () => activeSection.content.trim().split(/\s+/).filter(Boolean).length,
     [activeSection.content],
   );
 
@@ -391,8 +426,8 @@ export function KnowledgeEditor({
     const nextSection: EditableKnowledgeSection = {
       id: createSectionId(),
       parentId,
-      title: "新章节",
-      content: "请在这里编写章节内容。",
+      title: t("新章节"),
+      content: t("请在这里编写章节内容。"),
     };
 
     setSections((current) => [...current, nextSection]);
@@ -451,7 +486,9 @@ export function KnowledgeEditor({
         return current;
       }
 
-      const nextSections = current.filter((section) => section.id !== draggedId);
+      const nextSections = current.filter(
+        (section) => section.id !== draggedId,
+      );
       const targetIndex = nextSections.findIndex(
         (section) => section.id === targetId,
       );
@@ -545,9 +582,10 @@ export function KnowledgeEditor({
     const selectedText = textarea
       ? markdown.slice(textarea.selectionStart, textarea.selectionEnd)
       : "";
-    const content = selectedText || action.placeholder || "";
+    const content = selectedText || t(action.placeholder || "");
     const after = action.after ?? "";
-    const nextText = action.before + content + after;
+    const before = t(action.before);
+    const nextText = before + content + after;
 
     if (!textarea) {
       updateActiveSection({ content: markdown + nextText });
@@ -560,7 +598,7 @@ export function KnowledgeEditor({
     const scrollLeft = textarea.scrollLeft;
     const nextMarkdown =
       markdown.slice(0, start) + nextText + markdown.slice(end);
-    const nextCursor = start + action.before.length + content.length;
+    const nextCursor = start + before.length + content.length;
 
     updateActiveSection({ content: nextMarkdown });
     restoreTextareaState(scrollTop, scrollLeft, nextCursor, nextCursor);
@@ -587,13 +625,17 @@ export function KnowledgeEditor({
         }
 
         const start = Math.min(selectionStart, section.content.length);
-        const end = Math.min(Math.max(selectionEnd, start), section.content.length);
+        const end = Math.min(
+          Math.max(selectionEnd, start),
+          section.content.length,
+        );
 
         cursor = start + text.length;
 
         return {
           ...section,
-          content: section.content.slice(0, start) + text + section.content.slice(end),
+          content:
+            section.content.slice(0, start) + text + section.content.slice(end),
         };
       }),
     );
@@ -733,7 +775,12 @@ export function KnowledgeEditor({
     textarea.focus();
 
     if (files.length) {
-      void uploadAndInsertImages(files, selectionStart, selectionEnd, sectionId);
+      void uploadAndInsertImages(
+        files,
+        selectionStart,
+        selectionEnd,
+        sectionId,
+      );
       return;
     }
 
@@ -867,11 +914,9 @@ export function KnowledgeEditor({
             }`}
             style={{ paddingLeft: `${12 + depth * 18}px` }}
           >
-            {section.title || "未命名章节"}
+            {section.title || t("未命名章节")}
           </button>
-          {isDropAfter && (
-            <div className="my-1 h-0.5 rounded-full bg-accent" />
-          )}
+          {isDropAfter && <div className="my-1 h-0.5 rounded-full bg-accent" />}
           {renderSectionTree(section.id, depth + 1)}
         </div>
       );
@@ -884,11 +929,17 @@ export function KnowledgeEditor({
       <input type="hidden" name="slug" value={currentSlug} />
       <input type="hidden" name="content" value={combinedMarkdown} />
       <input type="hidden" name="sections" value={JSON.stringify(sections)} />
-      <input type="hidden" name="tags" value={JSON.stringify(withLearningMetadata(tags, difficulty, Number(learningOrder) || null))} />
+      <input
+        type="hidden"
+        name="tags"
+        value={JSON.stringify(
+          withLearningMetadata(tags, difficulty, Number(learningOrder) || null),
+        )}
+      />
 
       <section className="space-y-4 rounded-xl border border-line bg-panel p-5">
         <label className="block space-y-2">
-          <span className="text-sm font-semibold">知识库名称</span>
+          <span className="text-sm font-semibold">{t("知识库名称")}</span>
           <input
             name="title"
             value={knowledgeTitle}
@@ -899,31 +950,52 @@ export function KnowledgeEditor({
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-semibold">知识库简介</span>
+          <span className="text-sm font-semibold">{t("知识库简介")}</span>
           <textarea
             name="summary"
             value={summary}
             onChange={(event) => setSummary(event.target.value)}
             className="min-h-24 w-full resize-y rounded-md border border-line px-3 py-2 text-sm leading-6 outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
-            placeholder="用一两句话说明这篇知识库适合解决什么问题。"
+            placeholder={t("用一两句话说明这篇知识库适合解决什么问题。")}
           />
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-2">
-            <span className="text-sm font-semibold">学习等级</span>
-            <select name="difficulty" value={difficulty} onChange={(event) => setDifficulty(event.target.value as LearningLevel)} className="w-full rounded-md border border-line bg-panel px-3 py-2 text-sm">
-              {learningLevels.map((level) => <option key={level.value} value={level.value}>{level.label}</option>)}
+            <span className="text-sm font-semibold">{t("学习等级")}</span>
+            <select
+              name="difficulty"
+              value={difficulty}
+              onChange={(event) =>
+                setDifficulty(event.target.value as LearningLevel)
+              }
+              className="w-full rounded-md border border-line bg-panel px-3 py-2 text-sm"
+            >
+              {learningLevels.map((level) => (
+                <option key={level.value} value={level.value}>
+                  {t(level.label)}
+                </option>
+              ))}
             </select>
           </label>
           <label className="block space-y-2">
-            <span className="text-sm font-semibold">学习顺序</span>
-            <input name="learningOrder" type="number" min="1" max="9999" step="1" value={learningOrder} onChange={(event) => setLearningOrder(event.target.value)} placeholder="留空作为拓展阅读" className="w-full rounded-md border border-line bg-panel px-3 py-2 text-sm" />
+            <span className="text-sm font-semibold">{t("学习顺序")}</span>
+            <input
+              name="learningOrder"
+              type="number"
+              min="1"
+              max="9999"
+              step="1"
+              value={learningOrder}
+              onChange={(event) => setLearningOrder(event.target.value)}
+              placeholder={t("留空作为拓展阅读")}
+              className="w-full rounded-md border border-line bg-panel px-3 py-2 text-sm"
+            />
           </label>
         </div>
 
         <div className="space-y-2">
-          <span className="text-sm font-semibold">知识库标签</span>
+          <span className="text-sm font-semibold">{t("知识库标签")}</span>
           <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-md border border-line bg-panel px-3 py-2 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-dim">
             {tags.map((tag, index) => {
               const colorClass = getTagColorClass(index);
@@ -933,8 +1005,8 @@ export function KnowledgeEditor({
                   key={tag}
                   type="button"
                   onClick={() => removeTag(tag)}
-                  title="点击删除标签"
-                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition brightness-100 hover:brightness-90 ${colorClass}`}
+                  title={t("点击删除标签")}
+                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition brightness-100 hover:brightness-90 ${colorClass}`}
                 >
                   {tag}
                 </button>
@@ -951,7 +1023,7 @@ export function KnowledgeEditor({
               }}
               onBlur={() => addTag()}
               className="min-w-32 flex-1 border-0 bg-transparent text-sm outline-none"
-              placeholder="输入标签后按 Enter"
+              placeholder={t("输入标签后按 Enter")}
             />
           </div>
         </div>
@@ -974,8 +1046,8 @@ export function KnowledgeEditor({
             <div className="flex h-full min-h-[720px] items-start justify-center py-3">
               <button
                 type="button"
-                title="展开章节导航"
-                aria-label="展开章节导航"
+                title={t("展开章节导航")}
+                aria-label={t("展开章节导航")}
                 onClick={(event) => {
                   event.stopPropagation();
                   setIsSectionNavCollapsed(false);
@@ -991,16 +1063,16 @@ export function KnowledgeEditor({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-ink">
-                      章节导航
+                      {t("章节导航")}
                     </p>
                     <p className="mt-1 text-xs leading-5 text-muted">
-                      右键空白处新建章节，拖拽同级章节排序。
+                      {t("右键空白处新建章节，拖拽同级章节排序。")}
                     </p>
                   </div>
                   <button
                     type="button"
-                    title="隐藏章节导航"
-                    aria-label="隐藏章节导航"
+                    title={t("隐藏章节导航")}
+                    aria-label={t("隐藏章节导航")}
                     onClick={(event) => {
                       event.stopPropagation();
                       setIsSectionNavCollapsed(true);
@@ -1022,7 +1094,7 @@ export function KnowledgeEditor({
         <section className="min-w-0">
           <div className="border-b border-line p-4">
             <label className="block max-w-xl space-y-2">
-              <span className="text-sm font-semibold">当前章节名称</span>
+              <span className="text-sm font-semibold">{t("当前章节名称")}</span>
               <input
                 value={activeSection.title}
                 onChange={(event) =>
@@ -1036,9 +1108,9 @@ export function KnowledgeEditor({
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
             <div>
-              <p className="text-sm font-semibold">Markdown 正文</p>
+              <p className="text-sm font-semibold">{t("Markdown 正文")}</p>
               <p className="mt-1 text-xs text-muted">
-                每个章节拥有独立 Markdown 文档，按 Tab 切换右侧预览。
+                {t("每个章节拥有独立 Markdown 文档，按 Tab 切换右侧预览。")}
               </p>
             </div>
 
@@ -1047,7 +1119,7 @@ export function KnowledgeEditor({
               onClick={toggleSplitPreview}
               className="rounded-md bg-accent px-3 py-2 text-xs font-semibold text-canvas transition hover:bg-accent-strong"
             >
-              {isSplitPreview ? "关闭预览" : "分屏预览"}
+              {isSplitPreview ? t("关闭预览") : t("分屏预览")}
             </button>
           </div>
 
@@ -1056,14 +1128,14 @@ export function KnowledgeEditor({
               <button
                 key={action.title}
                 type="button"
-                title={action.title}
+                title={t(action.title)}
                 onMouseDown={(event) => {
                   event.preventDefault();
                   insertMarkdown(action);
                 }}
                 className="min-h-8 rounded-md border border-line bg-panel px-2.5 text-xs font-semibold text-secondary hover:border-accent hover:text-accent"
               >
-                {action.label}
+                {t(action.label)}
               </button>
             ))}
           </div>
@@ -1095,11 +1167,10 @@ export function KnowledgeEditor({
                 required
               />
               <div className="mt-2 flex justify-between text-xs text-muted">
-                <span>{sections.length} 个章节</span>
+                <span>{t("{0} 个章节", { "0": sections.length })}</span>
                 <span>
-                  {saveStatus ||
-                    uploadStatus ||
-                    `${wordCount} words`}
+                  {t(saveStatus || uploadStatus) ||
+                    t("词数：{0}", { "0": wordCount })}
                 </span>
               </div>
             </div>
@@ -1134,14 +1205,14 @@ export function KnowledgeEditor({
                       onClick={() => addSection(sectionId)}
                       className="block w-full px-3 py-2 text-left text-secondary hover:bg-raised"
                     >
-                      新建子章节
+                      {t("新建子章节")}
                     </button>
                     <button
                       type="button"
                       onClick={() => deleteSection(sectionId)}
                       className="block w-full px-3 py-2 text-left text-danger hover:bg-danger-dim"
                     >
-                      删除章节
+                      {t("删除章节")}
                     </button>
                   </>
                 );
@@ -1151,7 +1222,7 @@ export function KnowledgeEditor({
               onClick={() => addSection(null)}
               className="block w-full px-3 py-2 text-left text-secondary hover:bg-raised"
             >
-              新建章节
+              {t("新建章节")}
             </button>
           </div>
         )}

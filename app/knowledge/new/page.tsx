@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 
 import { KnowledgeEditor } from "@/app/knowledge/new/knowledge-editor";
@@ -7,6 +8,7 @@ import { publishKnowledge } from "@/lib/knowledge/actions";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 export default async function NewKnowledgePage() {
+  const t = await getTranslator();
   const isSupabaseConfigured = hasSupabaseEnv();
   const user = await getCurrentUser();
 
@@ -19,17 +21,21 @@ export default async function NewKnowledgePage() {
             href="/knowledge"
             className="text-sm font-medium text-accent hover:text-accent-strong"
           >
-            返回知识库
+            {t("返回知识库")}
           </Link>
           <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-accent">
-                发布知识库内容
+                {t("发布知识库内容")}
               </p>
-              <h1 className="mt-1 text-3xl font-bold">章节式 Markdown 编辑器</h1>
+              <h1 className="mt-1 text-3xl font-bold">
+                {t("章节式 Markdown 编辑器")}
+              </h1>
             </div>
             <p className="max-w-xl text-sm leading-6 text-muted">
-              左侧维护章节结构，右侧编辑当前章节正文；每个章节都是独立 Markdown 文档。
+              {t(
+                "左侧维护章节结构，右侧编辑当前章节正文；每个章节都是独立 Markdown 文档。",
+              )}
             </p>
           </div>
         </div>
@@ -41,16 +47,18 @@ export default async function NewKnowledgePage() {
       >
         {!user && (
           <div className="rounded-xl border border-line bg-panel p-5 text-sm text-muted">
-            发布知识库需要先登录。
+            {t("发布知识库需要先登录。")}
             <Link className="ml-2 font-semibold text-accent" href="/login">
-              去登录
+              {t("去登录")}
             </Link>
           </div>
         )}
 
         {!isSupabaseConfigured && (
           <div className="rounded-xl border border-line bg-panel p-4 text-sm text-muted">
-            Supabase 环境变量未配置，发布按钮会在提交时失败；配置完成后可直接写入 knowledge 表。
+            {t(
+              "Supabase 环境变量未配置，发布按钮会在提交时失败；配置完成后可直接写入 knowledge 表。",
+            )}
           </div>
         )}
 
@@ -62,7 +70,7 @@ export default async function NewKnowledgePage() {
             disabled={!user}
             className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-canvas transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:bg-muted"
           >
-            发布知识库
+            {t("发布知识库")}
           </button>
         </div>
       </form>

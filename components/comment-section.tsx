@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import type { CommentItem, CommentTargetType } from "@/lib/comments";
 import { publishComment } from "@/lib/comments";
 
@@ -7,14 +8,15 @@ type CommentSectionProps = {
   targetType: CommentTargetType;
 };
 
-export function CommentSection({
+export async function CommentSection({
   comments,
   targetSlug,
   targetType,
 }: CommentSectionProps) {
+  const t = await getTranslator();
   return (
     <section className="mt-6 rounded-xl border border-line bg-panel p-6">
-      <h2 className="text-xl font-bold">评论</h2>
+      <h2 className="text-xl font-bold">{t("评论")}</h2>
 
       <form action={publishComment} className="mt-4 space-y-3">
         <input type="hidden" name="targetType" value={targetType} />
@@ -24,13 +26,13 @@ export function CommentSection({
           required
           rows={4}
           className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
-          placeholder="写下你的想法..."
+          placeholder={t("写下你的想法...")}
         />
         <button
           type="submit"
           className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
         >
-          发表评论
+          {t("发表评论")}
         </button>
       </form>
 
@@ -54,7 +56,7 @@ export function CommentSection({
 
         {!comments.length && (
           <p className="rounded-md border border-dashed border-line p-4 text-sm text-muted">
-            暂无评论。
+            {t("暂无评论。")}
           </p>
         )}
       </div>

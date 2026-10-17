@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -25,12 +26,13 @@ export async function generateMetadata({
   const post = await getForumPostBySlug(slug);
 
   return {
-    title: post ? `${post.title} | Robot Developer Platform` : "帖子不存在",
+    title: post ? post.title : (await getTranslator())("帖子不存在"),
     description: post?.excerpt,
   };
 }
 
 export default async function PostPage({ params }: PostPageProps) {
+  const t = await getTranslator();
   const { slug } = await params;
   const [post, user] = await Promise.all([
     getForumPostBySlug(slug),
@@ -54,7 +56,7 @@ export default async function PostPage({ params }: PostPageProps) {
               href="/discuss"
               className="text-sm font-medium text-accent hover:text-accent-strong"
             >
-              返回讨论列表
+              {t("返回讨论列表")}
             </Link>
             {canManagePost && (
               <div className="flex flex-wrap gap-2">
@@ -62,7 +64,7 @@ export default async function PostPage({ params }: PostPageProps) {
                   href={`/posts/${post.slug}/edit`}
                   className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
                 >
-                  编辑帖子
+                  {t("编辑帖子")}
                 </Link>
                 <form action={deletePost}>
                   <input type="hidden" name="slug" value={post.slug} />
@@ -70,24 +72,39 @@ export default async function PostPage({ params }: PostPageProps) {
                     type="submit"
                     className="rounded-md border border-danger bg-panel px-4 py-2 text-sm font-semibold text-danger transition hover:bg-danger-dim"
                   >
-                    删除帖子
+                    {t("删除帖子")}
                   </button>
                 </form>
               </div>
             )}
           </div>
           <p className="mt-5 text-xs font-semibold uppercase text-accent">
-            {post.category}
+            {t(post.category)}
           </p>
           <h1 className="mt-2 text-3xl font-bold leading-tight">
             {post.title}
           </h1>
           <div className="mt-4 flex flex-wrap gap-3 text-sm text-muted">
-            <span>作者：{post.author}</span>
-            <span>发布时间：{post.date}</span>
-            <span>回复：{post.replies}</span>
-            <span>阅读：{post.views}</span>
-            <span>点赞：{post.likes}</span>
+            <span>
+              {t("作者：")}
+              {post.author}
+            </span>
+            <span>
+              {t("发布时间：")}
+              {post.date}
+            </span>
+            <span>
+              {t("回复：")}
+              {post.replies}
+            </span>
+            <span>
+              {t("阅读：")}
+              {post.views}
+            </span>
+            <span>
+              {t("点赞：")}
+              {post.likes}
+            </span>
           </div>
         </div>
       </header>

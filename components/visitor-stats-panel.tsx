@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/components/language-provider";
+
 import { useEffect, useState } from "react";
 
 type VisitorStats = {
@@ -31,6 +33,7 @@ async function sendVisitorSignal(event: "visit" | "heartbeat") {
 }
 
 export function VisitorStatsPanel() {
+  const { t, locale } = useI18n();
   const [stats, setStats] = useState<VisitorStats>({
     onlineVisitors: 0,
     visits24h: 0,
@@ -83,23 +86,27 @@ export function VisitorStatsPanel() {
 
   return (
     <div
-      aria-label="站点实时访问概览"
+      aria-label={t("站点实时访问概览")}
       className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs font-medium text-muted"
     >
       <span className="whitespace-nowrap">
-        今日访问人数{" "}
+        {t("今日访问人数")}{" "}
         <strong className="font-bold text-accent">
-          {(stats.visitsToday ?? stats.visits24h).toLocaleString("zh-CN")}
+          {(stats.visitsToday ?? stats.visits24h).toLocaleString(
+            locale === "zh" ? "zh-CN" : "en",
+          )}
         </strong>
       </span>
       <span className="whitespace-nowrap">
-        当前在线人数{" "}
+        {t("当前在线人数")}{" "}
         <strong className="font-bold text-accent">
-          {stats.onlineVisitors.toLocaleString("zh-CN")}
+          {stats.onlineVisitors.toLocaleString(
+            locale === "zh" ? "zh-CN" : "en",
+          )}
         </strong>
       </span>
       <span className="whitespace-nowrap text-[11px] font-semibold text-accent">
-        {status}
+        {t(status)}
       </span>
     </div>
   );

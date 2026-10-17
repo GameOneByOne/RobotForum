@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -39,6 +40,7 @@ export const dynamic = "force-dynamic";
 export default async function EditResourcePage({
   params,
 }: EditResourcePageProps) {
+  const t = await getTranslator();
   const { slug } = await params;
   const [resource, user] = await Promise.all([
     getResourceBySlug(slug),
@@ -54,7 +56,7 @@ export default async function EditResourcePage({
       <SiteHeader />
       <section className="mx-auto w-full max-w-3xl px-5 py-8">
         <Link className="text-sm font-medium text-accent" href="/resources">
-          返回资源目录
+          {t("返回资源目录")}
         </Link>
         <form
           action={updateResource}
@@ -62,12 +64,12 @@ export default async function EditResourcePage({
         >
           <input type="hidden" name="slug" value={resource.slug} />
           <div>
-            <p className="text-sm font-semibold text-accent">编辑资源</p>
+            <p className="text-sm font-semibold text-accent">{t("编辑资源")}</p>
             <h1 className="mt-2 text-3xl font-bold">{resource.title}</h1>
           </div>
 
           <label className="block space-y-2">
-            <span className="text-sm font-semibold">资源名称</span>
+            <span className="text-sm font-semibold">{t("资源名称")}</span>
             <input
               name="title"
               defaultValue={resource.title}
@@ -77,7 +79,7 @@ export default async function EditResourcePage({
           </label>
 
           <label className="block space-y-2">
-            <span className="text-sm font-semibold">资源链接</span>
+            <span className="text-sm font-semibold">{t("资源链接")}</span>
             <input
               name="url"
               type="url"
@@ -88,7 +90,7 @@ export default async function EditResourcePage({
           </label>
 
           <label className="block space-y-2">
-            <span className="text-sm font-semibold">类型</span>
+            <span className="text-sm font-semibold">{t("类型")}</span>
             <select
               name="type"
               defaultValue={resourceTypeValueMap[resource.type]}
@@ -96,14 +98,14 @@ export default async function EditResourcePage({
             >
               {resourceTypes.map((type) => (
                 <option key={type.value} value={type.value}>
-                  {type.label}
+                  {t(type.label)}
                 </option>
               ))}
             </select>
           </label>
 
           <label className="block space-y-2">
-            <span className="text-sm font-semibold">介绍</span>
+            <span className="text-sm font-semibold">{t("介绍")}</span>
             <textarea
               name="description"
               defaultValue={resource.description}
@@ -117,7 +119,7 @@ export default async function EditResourcePage({
             type="submit"
             className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
           >
-            更新资源
+            {t("更新资源")}
           </button>
         </form>
       </section>

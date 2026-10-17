@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -14,7 +15,10 @@ type EditProjectPageProps = {
 
 export const dynamic = "force-dynamic";
 
-export default async function EditProjectPage({ params }: EditProjectPageProps) {
+export default async function EditProjectPage({
+  params,
+}: EditProjectPageProps) {
+  const t = await getTranslator();
   const { slug } = await params;
   const [project, user] = await Promise.all([
     getProjectBySlug(slug),
@@ -30,7 +34,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
       <SiteHeader />
       <section className="mx-auto w-full max-w-3xl px-5 py-8">
         <Link className="text-sm font-medium text-accent" href="/projects">
-          返回项目列表
+          {t("返回项目列表")}
         </Link>
         <form
           action={updateProject}
@@ -38,12 +42,12 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
         >
           <input type="hidden" name="slug" value={project.slug} />
           <div>
-            <p className="text-sm font-semibold text-accent">编辑项目</p>
+            <p className="text-sm font-semibold text-accent">{t("编辑项目")}</p>
             <h1 className="mt-2 text-3xl font-bold">{project.title}</h1>
           </div>
 
           <label className="block space-y-2">
-            <span className="text-sm font-semibold">项目名称</span>
+            <span className="text-sm font-semibold">{t("项目名称")}</span>
             <input
               name="title"
               defaultValue={project.title}
@@ -53,7 +57,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
           </label>
 
           <label className="block space-y-2">
-            <span className="text-sm font-semibold">项目介绍</span>
+            <span className="text-sm font-semibold">{t("项目介绍")}</span>
             <textarea
               name="description"
               defaultValue={project.description}
@@ -64,7 +68,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
           </label>
 
           <label className="block space-y-2">
-            <span className="text-sm font-semibold">GitHub 链接</span>
+            <span className="text-sm font-semibold">{t("GitHub 链接")}</span>
             <input
               name="githubUrl"
               type="url"
@@ -77,7 +81,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
             type="submit"
             className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
           >
-            更新项目
+            {t("更新项目")}
           </button>
         </form>
       </section>

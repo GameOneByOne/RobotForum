@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/components/language-provider";
+
 import {
   useEffect,
   useRef,
@@ -17,6 +19,7 @@ function Lightbox({
   alt: string;
   close: () => void;
 }) {
+  const { t } = useI18n();
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const element = dialog.current;
@@ -27,7 +30,7 @@ function Lightbox({
     <dialog
       ref={dialog}
       className="markdown-lightbox"
-      aria-label={alt || "图片预览"}
+      aria-label={alt || t("图片预览")}
       onCancel={close}
       onClick={(e) => {
         if (e.target === e.currentTarget) close();
@@ -36,7 +39,7 @@ function Lightbox({
       <div className="markdown-lightbox-bar">
         <span>{alt}</span>
         <button type="button" onClick={close} autoFocus>
-          关闭预览 ×
+          {t("关闭预览 ×")}
         </button>
       </div>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -51,6 +54,7 @@ export function MarkdownImage({
   src,
   title,
 }: ComponentPropsWithoutRef<"img">) {
+  const { t } = useI18n();
   const [label, sizeValue, placeValue] = alt.split("|");
   const size = Number.parseFloat(sizeValue || "100");
   const width = `${Number.isFinite(size) ? Math.min(100, Math.max(0, size)) : 100}%`;
@@ -119,7 +123,7 @@ export function MarkdownImage({
         <button
           type="button"
           className="markdown-image-open"
-          aria-label={`放大图片：${label || "图解"}`}
+          aria-label={t("放大图片：{0}", { "0": label || t("图解") })}
           onClick={() => setOpen(true)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -145,11 +149,16 @@ export function MarkdownImage({
             style={{ display: paused ? "block" : "none" }}
             aria-hidden="true"
           />
-          <span className="markdown-image-hint">点击放大 ↗</span>
+          <span className="markdown-image-hint">{t("点击放大 ↗")}</span>
         </button>
       </span>
       <span className="markdown-figure-footer">
-        {label && <span className="markdown-caption">图解 · {label}</span>}
+        {label && (
+          <span className="markdown-caption">
+            {t("图解 ·")}
+            {label}
+          </span>
+        )}
         {animated && (
           <span className="markdown-animation-controls">
             <button
@@ -158,21 +167,21 @@ export function MarkdownImage({
               aria-pressed={paused}
               onClick={() => (paused ? setPaused(false) : freeze())}
             >
-              {paused ? "播放动图" : "暂停动图"}
+              {paused ? t("播放动图") : t("暂停动图")}
             </button>
             <button
               type="button"
               disabled={!loaded || replaying}
               onClick={replay}
             >
-              {replaying ? "加载中…" : "重播"}
+              {replaying ? t("加载中…") : t("重播")}
             </button>
           </span>
         )}
       </span>
       {error && (
         <span className="markdown-media-status" role="status">
-          {error}
+          {t(error)}
         </span>
       )}
       {open && (

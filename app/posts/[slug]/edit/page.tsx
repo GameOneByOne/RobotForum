@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -20,6 +21,7 @@ const categoryItems = navItems.filter((item) => item !== "全部帖子");
 export const dynamic = "force-dynamic";
 
 export default async function EditPostPage({ params }: EditPostPageProps) {
+  const t = await getTranslator();
   const { slug } = await params;
   const [post, user] = await Promise.all([
     getForumPostBySlug(slug),
@@ -40,15 +42,19 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
             href={`/posts/${post.slug}`}
             className="text-sm font-medium text-accent hover:text-accent-strong"
           >
-            返回帖子详情
+            {t("返回帖子详情")}
           </Link>
           <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-accent">编辑帖子</p>
-              <h1 className="mt-1 text-3xl font-bold">Markdown 编辑器</h1>
+              <p className="text-sm font-semibold text-accent">
+                {t("编辑帖子")}
+              </p>
+              <h1 className="mt-1 text-3xl font-bold">
+                {t("Markdown 编辑器")}
+              </h1>
             </div>
             <p className="max-w-xl text-sm leading-6 text-muted">
-              修改标题、分类和正文后，点击更新发布即可覆盖当前帖子内容。
+              {t("修改标题、分类和正文后，点击更新发布即可覆盖当前帖子内容。")}
             </p>
           </div>
         </div>
@@ -62,13 +68,15 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
 
         {!isSupabaseConfigured && (
           <div className="rounded-xl border border-line bg-panel p-4 text-sm text-muted">
-            Supabase 环境变量未配置，更新按钮会在提交时失败；配置完成后可直接写入数据库。
+            {t(
+              "Supabase 环境变量未配置，更新按钮会在提交时失败；配置完成后可直接写入数据库。",
+            )}
           </div>
         )}
 
         <section className="grid gap-4 rounded-xl border border-line bg-panel p-5 md:grid-cols-2">
           <label className="space-y-2">
-            <span className="text-sm font-semibold">标题</span>
+            <span className="text-sm font-semibold">{t("标题")}</span>
             <input
               name="title"
               defaultValue={post.title}
@@ -78,7 +86,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-semibold">分类</span>
+            <span className="text-sm font-semibold">{t("分类")}</span>
             <select
               name="category"
               defaultValue={post.category}
@@ -87,7 +95,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
             >
               {categoryItems.map((item) => (
                 <option key={item} value={item}>
-                  {item}
+                  {t(item)}
                 </option>
               ))}
             </select>
@@ -104,7 +112,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
             type="submit"
             className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
           >
-            更新发布
+            {t("更新发布")}
           </button>
         </div>
       </form>

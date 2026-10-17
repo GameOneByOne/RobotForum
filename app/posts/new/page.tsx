@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 
 import { navItems } from "@/app/forum-data";
@@ -10,6 +11,7 @@ import { hasSupabaseEnv } from "@/lib/supabase/env";
 const categoryItems = navItems.filter((item) => item !== "全部帖子");
 
 export default async function NewPostPage() {
+  const t = await getTranslator();
   const isSupabaseConfigured = hasSupabaseEnv();
   const user = await getCurrentUser();
 
@@ -22,15 +24,21 @@ export default async function NewPostPage() {
             href="/discuss"
             className="text-sm font-medium text-accent hover:text-accent-strong"
           >
-            返回讨论列表
+            {t("返回讨论列表")}
           </Link>
           <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-accent">发布帖子</p>
-              <h1 className="mt-1 text-3xl font-bold">Markdown 编辑器</h1>
+              <p className="text-sm font-semibold text-accent">
+                {t("发布帖子")}
+              </p>
+              <h1 className="mt-1 text-3xl font-bold">
+                {t("Markdown 编辑器")}
+              </h1>
             </div>
             <p className="max-w-xl text-sm leading-6 text-muted">
-              正文支持 CommonMark 和 GFM 语法，包括表格、任务列表、删除线、代码块和自动链接。
+              {t(
+                "正文支持 CommonMark 和 GFM 语法，包括表格、任务列表、删除线、代码块和自动链接。",
+              )}
             </p>
           </div>
         </div>
@@ -42,32 +50,34 @@ export default async function NewPostPage() {
       >
         {!user && (
           <div className="rounded-xl border border-line bg-panel p-5 text-sm text-muted">
-            发布帖子需要先登录。
+            {t("发布帖子需要先登录。")}
             <Link className="ml-2 font-semibold text-accent" href="/login">
-              去登录
+              {t("去登录")}
             </Link>
           </div>
         )}
 
         {!isSupabaseConfigured && (
           <div className="rounded-xl border border-line bg-panel p-4 text-sm text-muted">
-            Supabase 环境变量未配置，发布按钮会在提交时失败；配置完成后可直接写入数据库。
+            {t(
+              "Supabase 环境变量未配置，发布按钮会在提交时失败；配置完成后可直接写入数据库。",
+            )}
           </div>
         )}
 
         <section className="grid gap-4 rounded-xl border border-line bg-panel p-5 md:grid-cols-2">
           <label className="space-y-2">
-            <span className="text-sm font-semibold">标题</span>
+            <span className="text-sm font-semibold">{t("标题")}</span>
             <input
               name="title"
               className="w-full rounded-md border border-line px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
-              placeholder="例如：机械臂舵机选型经验"
+              placeholder={t("例如：机械臂舵机选型经验")}
               required
             />
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-semibold">分类</span>
+            <span className="text-sm font-semibold">{t("分类")}</span>
             <select
               name="category"
               className="w-full rounded-md border border-line bg-panel px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent-dim"
@@ -75,7 +85,7 @@ export default async function NewPostPage() {
             >
               {categoryItems.map((item) => (
                 <option key={item} value={item}>
-                  {item}
+                  {t(item)}
                 </option>
               ))}
             </select>
@@ -90,7 +100,7 @@ export default async function NewPostPage() {
             disabled={!user}
             className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-canvas transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:bg-muted"
           >
-            发布帖子
+            {t("发布帖子")}
           </button>
         </div>
       </form>

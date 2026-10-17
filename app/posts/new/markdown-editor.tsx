@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/components/language-provider";
+
 import type { KeyboardEvent, MouseEvent } from "react";
 import { useMemo, useRef, useState } from "react";
 
@@ -91,11 +93,32 @@ const toolbarActions: ToolbarAction[] = [
   },
 ];
 
-export function MarkdownEditor({
-  name,
-  initialValue = defaultMarkdown,
-}: MarkdownEditorProps) {
-  const [markdown, setMarkdown] = useState(initialValue);
+export function MarkdownEditor({ name, initialValue }: MarkdownEditorProps) {
+  const { t, locale } = useI18n();
+  const [markdown, setMarkdown] = useState(
+    initialValue ??
+      (locale === "zh"
+        ? defaultMarkdown
+        : `## Background
+
+Describe your robot project, hardware environment or software versions.
+
+### What I have tried
+
+- [ ] Check power
+- [ ] Read logs
+- [ ] Create a minimal example
+
+| Module | Status |
+| --- | --- |
+| Controller | To describe |
+| Sensor | To describe |
+
+\`\`\`ts
+console.log("robot forum");
+\`\`\`
+`),
+  );
   const [isSplitPreview, setIsSplitPreview] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -166,9 +189,10 @@ export function MarkdownEditor({
     const selectedText = textarea
       ? markdown.slice(textarea.selectionStart, textarea.selectionEnd)
       : "";
-    const content = selectedText || action.placeholder || "";
+    const content = selectedText || t(action.placeholder || "");
     const after = action.after ?? "";
-    const nextText = action.before + content + after;
+    const before = t(action.before);
+    const nextText = before + content + after;
 
     if (!textarea) {
       setMarkdown((current) => current + nextText);
@@ -181,7 +205,7 @@ export function MarkdownEditor({
     const scrollLeft = textarea.scrollLeft;
     const nextMarkdown =
       markdown.slice(0, start) + nextText + markdown.slice(end);
-    const nextCursor = start + action.before.length + content.length;
+    const nextCursor = start + before.length + content.length;
 
     setMarkdown(nextMarkdown);
     restoreTextareaState(scrollTop, scrollLeft, nextCursor, nextCursor);
@@ -212,10 +236,10 @@ export function MarkdownEditor({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
         <div>
           <label htmlFor={name} className="text-sm font-semibold">
-            Markdown 正文
+            {t("Markdown 正文")}
           </label>
           <p className="mt-1 text-xs text-muted">
-            按 Tab 打开或关闭右侧预览，编辑区会保持当前滚动位置。
+            {t("按 Tab 打开或关闭右侧预览，编辑区会保持当前滚动位置。")}
           </p>
         </div>
 
@@ -224,7 +248,7 @@ export function MarkdownEditor({
           onClick={toggleSplitPreview}
           className="rounded-md bg-accent px-3 py-2 text-xs font-semibold text-canvas transition hover:bg-accent-strong"
         >
-          {isSplitPreview ? "关闭预览" : "分屏预览"}
+          {isSplitPreview ? t("关闭预览") : t("分屏预览")}
         </button>
       </div>
 
@@ -233,11 +257,11 @@ export function MarkdownEditor({
           <button
             key={action.title}
             type="button"
-            title={action.title}
+            title={t(action.title)}
             onMouseDown={(event) => handleToolbarMouseDown(event, action)}
             className="min-h-8 rounded-md border border-line bg-panel px-2.5 text-xs font-semibold text-secondary hover:border-accent hover:text-accent"
           >
-            {action.label}
+            {t(action.label)}
           </button>
         ))}
       </div>
@@ -262,7 +286,7 @@ export function MarkdownEditor({
             required
           />
           <div className="mt-2 flex justify-end text-xs text-muted">
-            <span>{wordCount} words</span>
+            <span>{t("词数：{0}", { "0": wordCount })}</span>
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 
 import { ContentCard } from "@/components/content-card";
@@ -20,7 +21,7 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
-function SectionHeader({
+async function SectionHeader({
   eyebrow,
   title,
   href,
@@ -29,20 +30,22 @@ function SectionHeader({
   title: string;
   href: string;
 }) {
+  const t = await getTranslator();
   return (
     <div className="flex items-end justify-between gap-4">
       <div>
         <p className="eyebrow">{eyebrow}</p>
         <h2 className="mt-1 text-2xl font-bold">{title}</h2>
       </div>
-      <Link href={href} className="eyebrow">
-        查看全部
+      <Link href={href} className="eyebrow shrink-0 whitespace-nowrap">
+        {t("查看全部")}
       </Link>
     </div>
   );
 }
 
 export default async function Home() {
+  const t = await getTranslator();
   const [projects, knowledgeItems, resources, discussions] = await Promise.all([
     getProjects(3),
     getKnowledgeItems(3),
@@ -56,20 +59,20 @@ export default async function Home() {
 
       <section className="page-hero">
         <div className="mx-auto w-full max-w-7xl px-5 py-12">
-          <p className="eyebrow">BUILD INTELLIGENT TOGETHER</p>
+          <p className="eyebrow">{t("BUILD INTELLIGENT TOGETHER")}</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-            Build Your Own Robot
+            {t("让你的想法，拥有行动的能力")}
           </h1>
-          <p className="mt-4 max-w-3xl text-lg leading-8 text-muted">
-            谁不想急头白脸地做一个属于自己的机器人呢？
-          </p>
         </div>
       </section>
 
       <div className="mx-auto w-full max-w-7xl space-y-10 px-5 py-14 sm:py-20">
-
         <section>
-          <SectionHeader eyebrow="Knowledge" title="知识库" href="/knowledge" />
+          <SectionHeader
+            eyebrow={t("Knowledge")}
+            title={t("知识库")}
+            href="/knowledge"
+          />
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {knowledgeItems.map((item, index) => (
               <ContentCard
@@ -83,12 +86,16 @@ export default async function Home() {
             ))}
           </div>
           {!knowledgeItems.length && (
-            <EmptyState label="数据库中暂无知识库数据。" />
+            <EmptyState label={t("数据库中暂无知识库数据。")} />
           )}
         </section>
-      
+
         <section>
-          <SectionHeader eyebrow="Projects" title="项目展示" href="/projects" />
+          <SectionHeader
+            eyebrow={t("Projects")}
+            title={t("项目展示")}
+            href="/projects"
+          />
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {projects.map((project) => (
               <ContentCard
@@ -101,25 +108,31 @@ export default async function Home() {
               />
             ))}
           </div>
-          {!projects.length && <EmptyState label="数据库中暂无项目数据。" />}
+          {!projects.length && (
+            <EmptyState label={t("数据库中暂无项目数据。")} />
+          )}
         </section>
 
-
-
         <section>
-          <SectionHeader eyebrow="Discuss" title="最新讨论" href="/discuss" />
+          <SectionHeader
+            eyebrow={t("Discuss")}
+            title={t("最新讨论")}
+            href="/discuss"
+          />
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {discussions.map((post) => (
               <PostCard key={post.slug} post={post} />
             ))}
           </div>
-          {!discussions.length && <EmptyState label="数据库中暂无讨论数据。" />}
+          {!discussions.length && (
+            <EmptyState label={t("数据库中暂无讨论数据。")} />
+          )}
         </section>
 
         <section>
           <SectionHeader
-            eyebrow="Resources"
-            title="资源目录"
+            eyebrow={t("Resources")}
+            title={t("资源目录")}
             href="/resources"
           />
           <div className="mt-4 grid gap-4 md:grid-cols-3">
@@ -129,12 +142,14 @@ export default async function Home() {
                 title={resource.title}
                 description={resource.description}
                 href={`/resources/${encodeURIComponent(resource.slug)}`}
-                meta={resource.type}
+                meta={t(resource.type)}
                 tags={resource.tags}
               />
             ))}
           </div>
-          {!resources.length && <EmptyState label="数据库中暂无资源数据。" />}
+          {!resources.length && (
+            <EmptyState label={t("数据库中暂无资源数据。")} />
+          )}
         </section>
       </div>
     </main>
