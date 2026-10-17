@@ -1,7 +1,9 @@
+import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 import { AuthLinks } from "@/components/auth-links";
 import { HeaderNavigation } from "@/components/header-navigation";
 import { SearchForm } from "@/components/search-form";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { TechIcon } from "@/components/tech-icon";
 import type { AuthUser } from "@/lib/auth/session";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -11,13 +13,14 @@ export async function SiteHeader() {
   return <HeaderContent user={user} />;
 }
 
-export function HeaderContent({
+export async function HeaderContent({
   user,
   searchAction = "/search",
 }: {
   user: AuthUser | null;
   searchAction?: string;
 }) {
+  const t = await getTranslator();
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-canvas/95 backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-x-5 gap-y-3 px-5 py-5">
@@ -27,16 +30,17 @@ export function HeaderContent({
           </span>
           <span>
             <span className="block text-xs font-semibold tracking-[0.08em] text-ink sm:text-sm">
-              ROBOT KNOWLEDGE PLATFORM
+              TALOVRYN
             </span>
             <span className="mt-1 block text-xs tracking-wider text-muted">
-              机器人开发者知识论坛
+              {t("塔洛维恩 · 机器人开发者社区")}
             </span>
           </span>
         </Link>
         <HeaderNavigation />
-        <div className="flex w-full items-center gap-4 lg:w-auto">
+        <div className="flex w-full items-center gap-3 lg:w-auto">
           <SearchForm compact action={searchAction} />
+          <LanguageSwitcher />
           <AuthLinks user={user} />
         </div>
       </div>

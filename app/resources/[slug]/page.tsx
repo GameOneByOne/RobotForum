@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -18,6 +19,7 @@ export const revalidate = 60;
 export default async function ResourceDetailPage({
   params,
 }: ResourceDetailPageProps) {
+  const t = await getTranslator();
   const { slug } = await params;
   const [resource, user] = await Promise.all([
     getResourceBySlug(slug),
@@ -37,12 +39,12 @@ export default async function ResourceDetailPage({
       <section className="border-b border-line bg-panel">
         <div className="mx-auto w-full max-w-7xl px-5 py-6">
           <Link className="text-sm font-medium text-accent" href="/resources">
-            返回资源目录
+            {t("返回资源目录")}
           </Link>
           <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-accent">
-                {resource.type}
+                {t(resource.type)}
               </p>
               <h1 className="mt-2 text-3xl font-bold">{resource.title}</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">
@@ -54,7 +56,7 @@ export default async function ResourceDetailPage({
                 href={`/resources/${encodeURIComponent(resource.slug)}/edit`}
                 className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
               >
-                编辑资源
+                {t("编辑资源")}
               </Link>
             )}
           </div>
@@ -64,7 +66,7 @@ export default async function ResourceDetailPage({
             rel="noreferrer"
             target="_blank"
           >
-            打开资源链接
+            {t("打开资源链接")}
           </a>
         </div>
       </section>

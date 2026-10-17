@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import type { ReactNode } from "react";
 import { ContentCard } from "@/components/content-card";
 import { PostCard } from "@/components/post-card";
@@ -34,6 +35,7 @@ function ResultSection({
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
+  const t = await getTranslator();
   const params = await searchParams;
   const query = normalizeSearchQuery(
     typeof params?.q === "string" ? params.q : "",
@@ -60,10 +62,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <SiteHeader />
       <section className="page-hero">
         <div className="mx-auto w-full max-w-7xl px-5 py-14">
-          <p className="eyebrow">SEARCH THE PLATFORM</p>
-          <h1 className="mt-5 text-4xl font-semibold sm:text-5xl">全站搜索</h1>
+          <p className="eyebrow">{t("SEARCH THE PLATFORM")}</p>
+          <h1 className="mt-5 text-4xl font-semibold sm:text-5xl">
+            {t("全站搜索")}
+          </h1>
           <p className="mb-6 mt-4 text-sm leading-7 text-muted">
-            搜索知识正文、标题、简介和标签，发现相关项目、讨论与资源。
+            {t("搜索知识正文、标题、简介和标签，发现相关项目、讨论与资源。")}
           </p>
           <SearchForm key={query} query={query} />
         </div>
@@ -71,19 +75,25 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <div className="mx-auto w-full max-w-7xl space-y-10 px-5 py-10">
         {!query ? (
           <p className="rounded-xl border border-line bg-panel p-6 text-secondary">
-            输入关键词开始搜索，例如 ROS2、Linux 或机械臂。
+            {t("输入关键词开始搜索，例如 ROS2、Linux 或机械臂。")}
           </p>
         ) : (
           <>
             <p role="status" className="break-words text-sm text-muted">
-              “{query}” {configured ? `· 已返回 ${count} 条结果，每类最多显示 ${SEARCH_LIMIT} 条` : ""}
+              “{query}”{" "}
+              {configured
+                ? t("· 已返回 {0} 条结果，每类最多显示 {1} 条", {
+                    "0": count,
+                    "1": SEARCH_LIMIT,
+                  })
+                : ""}
             </p>
             {!configured && (
               <p
                 role="status"
                 className="rounded-xl border border-line bg-panel p-6 text-secondary"
               >
-                尚未连接内容数据库，暂时无法搜索。
+                {t("尚未连接内容数据库，暂时无法搜索。")}
               </p>
             )}
             {failed && (
@@ -91,15 +101,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 role="alert"
                 className="rounded-xl border border-danger/40 bg-danger-dim p-6 text-danger"
               >
-                部分内容暂时无法搜索，请稍后重试。下方保留已成功加载的结果。
+                {t(
+                  "部分内容暂时无法搜索，请稍后重试。下方保留已成功加载的结果。",
+                )}
               </p>
             )}
             {configured && !failed && !count && (
               <p className="rounded-xl border border-line bg-panel p-6 text-secondary">
-                没有匹配的内容，试试更短的关键词或相关标签。
+                {t("没有匹配的内容，试试更短的关键词或相关标签。")}
               </p>
             )}
-            <ResultSection title="知识库" count={results.knowledge.length}>
+            <ResultSection title={t("知识库")} count={results.knowledge.length}>
               {results.knowledge.map((item) => (
                 <ContentCard
                   key={item.slug}
@@ -110,7 +122,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 />
               ))}
             </ResultSection>
-            <ResultSection title="项目" count={results.projects.length}>
+            <ResultSection title={t("项目")} count={results.projects.length}>
               {results.projects.map((item) => (
                 <ContentCard
                   key={item.slug}
@@ -122,12 +134,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 />
               ))}
             </ResultSection>
-            <ResultSection title="讨论" count={posts.length}>
+            <ResultSection title={t("讨论")} count={posts.length}>
               {posts.map((post) => (
                 <PostCard key={post.slug} post={post} />
               ))}
             </ResultSection>
-            <ResultSection title="资源" count={results.resources.length}>
+            <ResultSection title={t("资源")} count={results.resources.length}>
               {results.resources.map((item) => (
                 <ContentCard
                   key={item.slug}

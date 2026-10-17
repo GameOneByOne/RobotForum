@@ -1,4 +1,5 @@
-export function SearchForm({
+import { getTranslator } from "@/lib/i18n/server";
+export async function SearchForm({
   query = "",
   compact = false,
   action = "/search",
@@ -7,6 +8,7 @@ export function SearchForm({
   compact?: boolean;
   action?: string;
 }) {
+  const t = await getTranslator();
   return (
     <form
       role="search"
@@ -28,18 +30,18 @@ export function SearchForm({
       <input
         type="search"
         name="q"
-        aria-label="搜索知识、项目、讨论和资源"
-        placeholder="搜索知识、项目或问题…"
+        aria-label={t("搜索知识、项目、讨论和资源")}
+        placeholder={t("搜索知识、项目或问题…")}
         defaultValue={query}
         maxLength={120}
         className="min-w-0 flex-1 bg-transparent py-2 text-sm text-ink outline-none focus-visible:outline-none"
       />
       <button
         type="submit"
-        aria-label="提交搜索"
+        aria-label={t("提交搜索")}
         className={`shrink-0 rounded-md px-2 py-2 text-sm text-accent hover:bg-accent-dim ${compact ? "" : "px-4"}`}
       >
-        {compact ? "↵" : "搜索"}
+        {compact ? "↵" : t("搜索")}
       </button>
     </form>
   );

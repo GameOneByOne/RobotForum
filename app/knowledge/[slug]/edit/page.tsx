@@ -1,3 +1,4 @@
+import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -20,6 +21,7 @@ export const dynamic = "force-dynamic";
 export default async function EditKnowledgePage({
   params,
 }: EditKnowledgePageProps) {
+  const t = await getTranslator();
   const { slug } = await params;
   const [item, user] = await Promise.all([
     getKnowledgeItemBySlug(slug),
@@ -43,17 +45,21 @@ export default async function EditKnowledgePage({
             href={`/knowledge/${encodedSlug}`}
             className="text-sm font-medium text-accent hover:text-accent-strong"
           >
-            返回知识库详情
+            {t("返回知识库详情")}
           </Link>
           <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-accent">
-                编辑知识库
+                {t("编辑知识库")}
               </p>
-              <h1 className="mt-1 text-3xl font-bold">章节式 Markdown 编辑器</h1>
+              <h1 className="mt-1 text-3xl font-bold">
+                {t("章节式 Markdown 编辑器")}
+              </h1>
             </div>
             <p className="max-w-xl text-sm leading-6 text-muted">
-              修改知识库名称、章节结构和正文后，点击更新发布即可覆盖当前内容。
+              {t(
+                "修改知识库名称、章节结构和正文后，点击更新发布即可覆盖当前内容。",
+              )}
             </p>
           </div>
         </div>
@@ -65,7 +71,9 @@ export default async function EditKnowledgePage({
       >
         {!isSupabaseConfigured && (
           <div className="rounded-xl border border-line bg-panel p-4 text-sm text-muted">
-            Supabase 环境变量未配置，更新按钮会在提交时失败；配置完成后可直接写入 knowledge 表。
+            {t(
+              "Supabase 环境变量未配置，更新按钮会在提交时失败；配置完成后可直接写入 knowledge 表。",
+            )}
           </div>
         )}
 
@@ -84,7 +92,7 @@ export default async function EditKnowledgePage({
             type="submit"
             className="rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-canvas transition hover:bg-accent-strong"
           >
-            更新发布
+            {t("更新发布")}
           </button>
         </div>
       </form>

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useI18n } from "@/components/language-provider";
 import { iconForContent, TechIcon } from "@/components/tech-icon";
 
 type ContentCardProps = {
@@ -18,10 +21,11 @@ export function ContentCard({
   tags = [],
   index,
 }: ContentCardProps) {
+  const { t } = useI18n();
   const inner = (
     <>
       <div className="mb-7 flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
-        <span>{meta || (tags[0] ?? "KNOWLEDGE")}</span>
+        <span>{meta || (tags[0] ?? t("知识库"))}</span>
         {index !== undefined && (
           <span>{String(index + 1).padStart(2, "0")}</span>
         )}
