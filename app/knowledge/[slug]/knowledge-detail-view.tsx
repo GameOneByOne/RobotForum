@@ -3,7 +3,15 @@
 import { useI18n } from "@/components/language-provider";
 
 import type { CSSProperties, MouseEvent } from "react";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { MarkdownContent } from "@/components/markdown-content";
 import { readingOutline } from "@/lib/markdown/outline";
@@ -92,6 +100,137 @@ export function KnowledgeDetailView({
   }
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [immersive, setImmersive] = useState(false);
+  const [showChapters, setShowChapters] = useState(false);
+  const readerRef = useRef<HTMLDivElement>(null);
+  const immersiveButtonRef = useRef<HTMLButtonElement>(null);
+  const immersiveRef = useRef(false);
+  const nativeFullscreenRef = useRef(false);
+  const savedScrollRef = useRef({ x: 0, y: 0 });
+  const chaptersId = useId();
+  const closeImmersive = useCallback(() => {
+    immersiveRef.current = false;
+    setImmersive(false);
+    setShowChapters(false);
+    if (document.fullscreenElement === readerRef.current) {
+      void document.exitFullscreen().catch(() => {});
+    }
+  }, [setImmersive, setShowChapters]);
+
+  useEffect(() => {
+    const reader = readerRef.current;
+    function onFullscreenChange() {
+      if (document.fullscreenElement === reader) {
+        nativeFullscreenRef.current = true;
+      } else if (nativeFullscreenRef.current) {
+        nativeFullscreenRef.current = false;
+        closeImmersive();
+      }
+    }
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+      immersiveRef.current = false;
+      if (reader && document.fullscreenElement === reader) {
+        void document.exitFullscreen().catch(() => {});
+      }
+    };
+  }, [closeImmersive]);
+
+  useEffect(() => {
+    const reader = readerRef.current;
+    if (!immersive || !reader) return;
+    const previousOverflow = document.body.style.overflow;
+    const immersiveButton = immersiveButtonRef.current;
+    document.body.style.overflow = "hidden";
+    // Make the viewport fallback behave like a modal even without native
+    // fullscreen: background navigation cannot receive keyboard focus.
+    const inertElements = new Map<HTMLElement, boolean>();
+    let current: HTMLElement = reader;
+    while (current.parentElement && current !== document.body) {
+      for (const sibling of current.parentElement.children) {
+        if (sibling !== current && sibling instanceof HTMLElement) {
+          inertElements.set(sibling, sibling.inert);
+          sibling.setAttribute("inert", "");
+        }
+      }
+      current = current.parentElement;
+    }
+    immersiveButton?.focus({ preventScroll: true });
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented || document.querySelector("dialog[open]"))
+        return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeImmersive();
+      } else if (event.key === "Tab") {
+        const controls = Array.from(
+          reader!.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex="0"]',
+          ),
+        ).filter(
+          (element) => element.getClientRects().length && element.tabIndex >= 0,
+        );
+        const first = controls[0];
+        const last = controls.at(-1);
+        if (
+          event.shiftKey &&
+          (document.activeElement === first ||
+            document.activeElement === reader)
+        ) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      inertElements.forEach((wasInert, element) => {
+        if (wasInert) element.setAttribute("inert", "");
+        else element.removeAttribute("inert");
+      });
+      const position = savedScrollRef.current;
+      window.requestAnimationFrame(() => {
+        if (!reader.isConnected) return;
+        window.scrollTo({
+          left: position.x,
+          top: position.y,
+          behavior: "instant",
+        });
+        immersiveButton?.focus({ preventScroll: true });
+      });
+    };
+  }, [immersive, closeImmersive]);
+
+  function toggleImmersive() {
+    if (immersiveRef.current) {
+      closeImmersive();
+      return;
+    }
+    const reader = readerRef.current;
+    if (!reader) return;
+    savedScrollRef.current = { x: window.scrollX, y: window.scrollY };
+    immersiveRef.current = true;
+    setImmersive(true);
+    setContextMenu(null);
+    // The fixed viewport layout remains active when fullscreen is unavailable
+    // or rejected (for example on mobile browsers or inside an iframe).
+    if (reader.requestFullscreen) {
+      void reader
+        .requestFullscreen()
+        .then(() => {
+          if (!immersiveRef.current && document.fullscreenElement === reader) {
+            void document.exitFullscreen().catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
+  }
   const activeIndex = Math.min(activeSectionIndex, sections.length - 1);
   const activeSection = useMemo(
     () => sections[activeIndex],
@@ -101,7 +240,12 @@ export function KnowledgeDetailView({
   function selectSection(index: number) {
     setActiveSectionIndex(index);
     setContextMenu(null);
+    setShowChapters(false);
     window.requestAnimationFrame(() => {
+      if (immersiveRef.current) {
+        readerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
       document.getElementById("knowledge-section-content")?.scrollIntoView({
         behavior: "smooth",
         block: "start",
@@ -130,15 +274,23 @@ export function KnowledgeDetailView({
 
   return (
     <div
-      className="knowledge-reader mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 lg:grid-cols-[240px_minmax(0,1fr)]"
+      ref={readerRef}
+      className={`knowledge-reader mx-auto grid w-full max-w-7xl gap-5 px-4 py-6 lg:grid-cols-[240px_minmax(0,1fr)]${immersive ? " reading-immersive" : ""}`}
+      role={immersive ? "dialog" : undefined}
+      aria-modal={immersive ? true : undefined}
+      aria-label={immersive ? t("沉浸式阅读") : undefined}
+      data-chapters={showChapters ? "open" : "closed"}
       data-theme={settings.theme}
       style={
         { "--reading-font-size": `${settings.fontSize}px` } as CSSProperties
       }
       onClick={() => setContextMenu(null)}
     >
-      <aside className="h-fit rounded-xl border border-line bg-panel p-4 lg:sticky lg:top-24">
-        <details open={wideScreen}>
+      <aside
+        id={chaptersId}
+        className="reading-chapters h-fit rounded-xl border border-line bg-panel p-4 lg:sticky lg:top-24"
+      >
+        <details open={immersive || wideScreen}>
           <summary className="text-sm font-semibold text-muted">
             {t("章节导航")}
           </summary>
@@ -207,6 +359,27 @@ export function KnowledgeDetailView({
             >
               {settings.theme === "dark" ? t("浅色阅读") : t("深色阅读")}
             </button>
+            {immersive && (
+              <button
+                type="button"
+                aria-expanded={showChapters}
+                aria-controls={chaptersId}
+                onClick={() => setShowChapters((value) => !value)}
+              >
+                {t("章节导航")}
+              </button>
+            )}
+            <button
+              ref={immersiveButtonRef}
+              type="button"
+              aria-pressed={immersive}
+              onClick={toggleImmersive}
+            >
+              {immersive ? t("退出沉浸式") : t("沉浸式阅读")}
+            </button>
+            {immersive && (
+              <span className="reading-exit-hint">{t("Esc 退出")}</span>
+            )}
           </div>
           <h2 className="mb-5 border-b border-line pb-4 text-2xl font-bold leading-tight text-ink">
             {activeSection.title}

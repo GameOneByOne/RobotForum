@@ -4,6 +4,10 @@ export type TranslationParams = Record<string, string | number>;
 // Keys describe UI only. User-authored titles, Markdown, tags and comments are
 // never passed through this dictionary.
 export const en: Record<string, string> = {
+  资源分享: "Shared resources",
+  沉浸式阅读: "Immersive reading",
+  退出沉浸式: "Exit immersive mode",
+  "Esc 退出": "Esc to exit",
   塔洛维恩: "Talovryn",
   "塔洛维恩 · 机器人开发者社区": "A community for robot builders.",
   机器人开发者社区: "A community for robot builders.",

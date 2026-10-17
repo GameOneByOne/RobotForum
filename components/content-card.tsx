@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useI18n } from "@/components/language-provider";
 import { iconForContent, TechIcon } from "@/components/tech-icon";
 import { getTagStyle } from "@/lib/tag-colors";
+import { isLearningOrderTag } from "@/lib/knowledge/learning-path";
 
 type ContentCardProps = {
   title: string;
@@ -23,10 +24,11 @@ export function ContentCard({
   index,
 }: ContentCardProps) {
   const { t } = useI18n();
+  const visibleTags = tags.filter((tag) => !isLearningOrderTag(tag));
   const inner = (
     <>
       <div className="mb-7 flex items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.18em] text-muted">
-        <span>{meta || (tags[0] ?? t("知识库"))}</span>
+        <span>{meta || (visibleTags[0] ?? t("知识库"))}</span>
         {index !== undefined && (
           <span>{String(index + 1).padStart(2, "0")}</span>
         )}
@@ -43,7 +45,7 @@ export function ContentCard({
       </p>
       <div className="mt-auto flex items-end justify-between gap-3">
         <div className="flex flex-wrap gap-2">
-          {tags.map((tag) => (
+          {visibleTags.map((tag) => (
             <span key={tag} className="tech-tag" style={getTagStyle(tag)}>
               {tag}
             </span>

@@ -358,9 +358,6 @@ export function KnowledgeEditor({
   const [difficulty, setDifficulty] = useState<LearningLevel>(
     initialLearning.level,
   );
-  const [learningOrder, setLearningOrder] = useState(
-    initialLearning.order?.toString() ?? "",
-  );
   const [tags, setTags] = useState<string[]>(
     initialTags.filter((tag) => !isLearningMetadataTag(tag)),
   );
@@ -401,7 +398,7 @@ export function KnowledgeEditor({
   function addTag(value = tagInput) {
     const nextTag = normalizeTag(value);
 
-    if (!nextTag || tags.includes(nextTag)) {
+    if (!nextTag || tags.includes(nextTag) || isLearningMetadataTag(nextTag)) {
       setTagInput("");
       return;
     }
@@ -932,9 +929,7 @@ export function KnowledgeEditor({
       <input
         type="hidden"
         name="tags"
-        value={JSON.stringify(
-          withLearningMetadata(tags, difficulty, Number(learningOrder) || null),
-        )}
+        value={JSON.stringify(withLearningMetadata(tags, difficulty))}
       />
 
       <section className="space-y-4 rounded-xl border border-line bg-panel p-5">
@@ -960,7 +955,7 @@ export function KnowledgeEditor({
           />
         </label>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div>
           <label className="block space-y-2">
             <span className="text-sm font-semibold">{t("学习等级")}</span>
             <select
@@ -977,20 +972,6 @@ export function KnowledgeEditor({
                 </option>
               ))}
             </select>
-          </label>
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold">{t("学习顺序")}</span>
-            <input
-              name="learningOrder"
-              type="number"
-              min="1"
-              max="9999"
-              step="1"
-              value={learningOrder}
-              onChange={(event) => setLearningOrder(event.target.value)}
-              placeholder={t("留空作为拓展阅读")}
-              className="w-full rounded-md border border-line bg-panel px-3 py-2 text-sm"
-            />
           </label>
         </div>
 
