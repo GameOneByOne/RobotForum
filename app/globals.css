@@ -102,6 +102,18 @@ textarea,
   height: 1px;
   background: var(--line);
 }
+.home-section-title {
+  color: var(--foreground);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.home-view-all {
+  color: var(--secondary);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
 .tech-card {
   position: relative;
   display: flex;
@@ -252,7 +264,10 @@ a.tech-card:hover {
   border: 0;
   border-top: 1px solid var(--line);
 }
-.markdown-body code:not([class*="language-"]):not([class*="math-"]):not(.markdown-code code) {
+.markdown-body
+  code:not([class*="language-"]):not([class*="math-"]):not(
+    .markdown-code code
+  ) {
   border: 1px solid var(--line);
   border-radius: 5px;
   padding: 0.12em 0.4em;
@@ -563,6 +578,56 @@ a.tech-card:hover {
 .reading-size-controls {
   display: flex;
   gap: 4px;
+}
+.knowledge-reader.reading-immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: block;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  margin: 0;
+  padding: 0 clamp(0px, 4vw, 64px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-top: 100px;
+  background: var(--background);
+  color: var(--foreground);
+}
+.reading-immersive .reading-article {
+  width: 100%;
+  max-width: 960px;
+  min-height: 100dvh;
+  margin-inline: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 0 48px #00000018;
+}
+.reading-immersive .reading-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding-block: 14px;
+  background: var(--panel);
+}
+.reading-immersive .reading-chapters {
+  display: none;
+}
+.reading-immersive[data-chapters="open"] .reading-chapters {
+  position: fixed;
+  top: 96px;
+  left: 16px;
+  z-index: 30;
+  display: block;
+  width: min(280px, calc(100% - 32px));
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+  box-shadow: 0 12px 40px #00000030;
+}
+.reading-exit-hint {
+  font-size: 11px;
+  color: var(--muted);
 }
 .reading-outline {
   margin-bottom: 28px;

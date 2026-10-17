@@ -21,23 +21,15 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
-async function SectionHeader({
-  eyebrow,
-  title,
-  href,
-}: {
-  eyebrow: string;
-  title: string;
-  href: string;
-}) {
+async function SectionHeader({ title, href }: { title: string; href: string }) {
   const t = await getTranslator();
   return (
     <div className="flex items-end justify-between gap-4">
-      <div>
-        <p className="eyebrow">{eyebrow}</p>
-        <h2 className="mt-1 text-2xl font-bold">{title}</h2>
-      </div>
-      <Link href={href} className="eyebrow shrink-0 whitespace-nowrap">
+      <h2 className="eyebrow home-section-title">{title}</h2>
+      <Link
+        href={href}
+        className="eyebrow home-view-all shrink-0 whitespace-nowrap"
+      >
         {t("查看全部")}
       </Link>
     </div>
@@ -68,11 +60,7 @@ export default async function Home() {
 
       <div className="mx-auto w-full max-w-7xl space-y-10 px-5 py-14 sm:py-20">
         <section>
-          <SectionHeader
-            eyebrow={t("Knowledge")}
-            title={t("知识库")}
-            href="/knowledge"
-          />
+          <SectionHeader title={t("知识库")} href="/knowledge" />
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {knowledgeItems.map((item, index) => (
               <ContentCard
@@ -91,11 +79,7 @@ export default async function Home() {
         </section>
 
         <section>
-          <SectionHeader
-            eyebrow={t("Projects")}
-            title={t("项目展示")}
-            href="/projects"
-          />
+          <SectionHeader title={t("项目展示")} href="/projects" />
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {projects.map((project) => (
               <ContentCard
@@ -114,11 +98,7 @@ export default async function Home() {
         </section>
 
         <section>
-          <SectionHeader
-            eyebrow={t("Discuss")}
-            title={t("最新讨论")}
-            href="/discuss"
-          />
+          <SectionHeader title={t("最新讨论")} href="/discuss" />
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {discussions.map((post) => (
               <PostCard key={post.slug} post={post} />
@@ -130,11 +110,7 @@ export default async function Home() {
         </section>
 
         <section>
-          <SectionHeader
-            eyebrow={t("Resources")}
-            title={t("资源目录")}
-            href="/resources"
-          />
+          <SectionHeader title={t("资源分享")} href="/resources" />
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {resources.map((resource) => (
               <ContentCard
