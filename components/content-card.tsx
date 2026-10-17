@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useI18n } from "@/components/language-provider";
 import { iconForContent, TechIcon } from "@/components/tech-icon";
+import { getTagStyle } from "@/lib/tag-colors";
 
 type ContentCardProps = {
   title: string;
@@ -43,7 +44,7 @@ export function ContentCard({
       <div className="mt-auto flex items-end justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => (
-            <span key={tag} className="tech-tag">
+            <span key={tag} className="tech-tag" style={getTagStyle(tag)}>
               {tag}
             </span>
           ))}

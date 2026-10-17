@@ -11,7 +11,7 @@ import type {
 import { useMemo, useRef, useState } from "react";
 
 import { MarkdownContent } from "@/components/markdown-content";
-import { getTagColorClass } from "@/lib/tag-colors";
+import { getTagStyle } from "@/lib/tag-colors";
 import type { KnowledgeSection } from "@/lib/knowledge/sections";
 import {
   getLearningMetadata,
@@ -997,16 +997,15 @@ export function KnowledgeEditor({
         <div className="space-y-2">
           <span className="text-sm font-semibold">{t("知识库标签")}</span>
           <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-md border border-line bg-panel px-3 py-2 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-dim">
-            {tags.map((tag, index) => {
-              const colorClass = getTagColorClass(index);
-
+            {tags.map((tag) => {
               return (
                 <button
                   key={tag}
                   type="button"
                   onClick={() => removeTag(tag)}
                   title={t("点击删除标签")}
-                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition brightness-100 hover:brightness-90 ${colorClass}`}
+                  style={getTagStyle(tag)}
+                  className="rounded-md border px-2.5 py-1 text-xs font-semibold transition brightness-100 hover:brightness-90"
                 >
                   {tag}
                 </button>
