@@ -1,3 +1,4 @@
+import { ProjectCardView } from "@/components/project-card";
 import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 
@@ -82,14 +83,7 @@ export default async function Home() {
           <SectionHeader title={t("项目展示")} href="/projects" />
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {projects.map((project) => (
-              <ContentCard
-                key={project.slug}
-                title={project.title}
-                description={project.description}
-                href={`/projects/${encodeURIComponent(project.slug)}`}
-                meta={project.author}
-                tags={project.tags}
-              />
+              <ProjectCardView key={project.slug} project={project} />
             ))}
           </div>
           {!projects.length && (

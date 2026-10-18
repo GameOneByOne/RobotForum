@@ -4,6 +4,101 @@ export type TranslationParams = Record<string, string | number>;
 // Keys describe UI only. User-authored titles, Markdown, tags and comments are
 // never passed through this dictionary.
 export const en: Record<string, string> = {
+  项目概况: "Project overview",
+  卡片简介: "Card summary",
+  "简要说明要做出什么，以及适合谁。":
+    "Briefly describe what readers will build and who it is for.",
+  项目难度: "Difficulty",
+  预计用时: "Estimated time",
+  "例如：约 30 分钟": "For example: about 30 minutes",
+  "用逗号分隔，例如 ROS 2, 仿真":
+    "Separate tags with commas, e.g. ROS 2, simulation",
+  前置要求: "Prerequisites",
+  "先说明运行环境和所需资源，让读者判断是否可以开始。":
+    "Describe the environment and resources readers need before they start.",
+  操作系统: "Operating system",
+  "硬件要求（每行一项）": "Hardware requirements (one per line)",
+  "例如：一台电脑、键盘；无需实体机器人":
+    "For example: a computer and keyboard; no physical robot needed",
+  "软件要求（每行一项）": "Software requirements (one per line)",
+  "已有知识（每行一项）": "Prior knowledge (one per line)",
+  "例如：能打开终端并运行命令":
+    "For example: opening a terminal and running commands",
+  项目说明与操作内容: "Project guide and instructions",
+  "支持 Markdown、代码、图片和公式，已有内容不会被翻译。":
+    "Supports Markdown, code, images and math. Authored content keeps its original language.",
+  配置学习路线: "Build the learning path",
+  "按实践顺序添加阶段，为每个阶段关联知识与验收目标。":
+    "Add stages in practical order, then link articles and define an outcome for each stage.",
+  添加阶段: "Add stage",
+  "尚未添加阶段，点击“添加阶段”开始配置。":
+    "No stages yet. Select Add stage to start.",
+  未命名阶段: "Untitled stage",
+  上移阶段: "Move stage up",
+  下移阶段: "Move stage down",
+  删除阶段: "Delete stage",
+  阶段名称: "Stage title",
+  阶段说明: "Stage description",
+  "实践成果 / 验收目标": "Outcome / acceptance criteria",
+  "例如：用键盘控制小海龟，并看到速度消息。":
+    "For example: control the turtle with the keyboard and observe velocity messages.",
+  "阶段操作步骤（Markdown）": "Stage instructions (Markdown)",
+  关联知识库文章: "Linked knowledge articles",
+  选择要关联的文章: "Select an article to link",
+  选择一篇文章添加到本阶段: "Select an article for this stage",
+  "暂无可关联的已发布文章，仍可编写阶段操作步骤。":
+    "No published articles are available. You can still write stage instructions.",
+  文章暂不可用: "Article unavailable",
+  文章学习类型: "Article role",
+  必学: "Required",
+  按需补充: "Learn as needed",
+  移除关联: "Unlink",
+  自主安排: "Self-paced",
+  项目学习路线: "Project learning path",
+  "另有 {0} 个阶段": "{0} more stages",
+  "{0} 个学习阶段": "{0} learning stages",
+  查看学习路线: "Explore the path",
+  查看项目: "View project",
+  硬件要求: "Hardware",
+  软件环境: "Software",
+  已有知识: "Prior knowledge",
+  开始之前: "Before you start",
+  项目说明: "Project guide",
+  从实践走向理解: "LEARN BY BUILDING",
+  "{0} 个阶段 · 按需补充理论": "{0} stages · theory when you need it",
+  学习阶段: "Learning stages",
+  "阶段 {0} / {1}": "Stage {0} / {1}",
+  本阶段验收目标: "Stage acceptance criteria",
+  操作步骤: "Instructions",
+  阶段切换: "Stage navigation",
+  "← 上一阶段": "← Previous stage",
+  "下一阶段 →": "Next stage →",
+  "作者尚未配置学习路线。": "The author has not added a learning path yet.",
+  "选择一个想做的项目，按阶段学习并完成实践。":
+    "Choose a project to build, then follow its stages from learning to practice.",
+  "项目字段格式不正确或内容过长。": "A project field is invalid or too long.",
+  "每项前置要求最多填写 40 条。":
+    "Each requirement group supports up to 40 entries.",
+  "项目标签最多 20 个，每个不超过 60 字。":
+    "Use up to 20 tags, with at most 60 characters each.",
+  "学习路线最多包含 30 个阶段。": "A learning path supports up to 30 stages.",
+  "学习路线格式不正确。": "The learning path is invalid.",
+  "每个阶段都需要名称和实践成果。": "Each stage needs a title and an outcome.",
+  "每个阶段最多关联 30 篇知识库文章。":
+    "Link up to 30 knowledge articles per stage.",
+  "关联文章格式不正确。": "A linked article is invalid.",
+  "关联文章无效、重复或学习类型不正确。":
+    "A linked article is invalid, duplicated or has an invalid role.",
+  "项目名称和介绍不能为空。": "Project title and summary are required.",
+  "项目链接必须使用 HTTP 或 HTTPS 地址。": "Use an HTTP or HTTPS project URL.",
+  "项目难度不正确。": "The project difficulty is invalid.",
+  "项目保存暂不可用，请稍后再试。":
+    "Project saving is unavailable. Please try again later.",
+  "项目标识无效。": "The project ID is invalid.",
+  "项目保存失败，请检查关联文章是否仍可用后重试。":
+    "Could not save the project. Check that linked articles are still available, then try again.",
+  "项目保存失败，请稍后重试。":
+    "Could not save the project. Please try again later.",
   资源分享: "Shared resources",
   沉浸式阅读: "Immersive reading",
   退出沉浸式: "Exit immersive mode",

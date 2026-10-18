@@ -1,7 +1,7 @@
 import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 
-import { ContentCard } from "@/components/content-card";
+import { ProjectCardView } from "@/components/project-card";
 import { SiteHeader } from "@/components/site-header";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getProjects } from "@/lib/platform/queries";
@@ -23,7 +23,7 @@ export default async function ProjectsPage() {
               {t("项目展示")}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-muted">
-              {t("从工程想法到真实作品，探索机器人开发者的开源实践。")}
+              {t("选择一个想做的项目，按阶段学习并完成实践。")}
             </p>
           </div>
           {user ? (
@@ -43,16 +43,8 @@ export default async function ProjectsPage() {
 
       <div className="mx-auto grid w-full max-w-7xl gap-4 px-5 py-8 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((project) => (
-          <div key={project.slug} className="space-y-2">
-            <ContentCard
-              title={project.title}
-              description={`${project.description}${
-                project.githubUrl ? ` GitHub: ${project.githubUrl}` : ""
-              }`}
-              href={`/projects/${encodeURIComponent(project.slug)}`}
-              meta={project.author}
-              tags={project.tags}
-            />
+          <div key={project.slug} className="flex min-w-0 flex-col gap-2">
+            <ProjectCardView project={project} />
             {user && project.ownerId === user.id && (
               <Link
                 href={`/projects/${encodeURIComponent(project.slug)}/edit`}

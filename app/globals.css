@@ -114,6 +114,34 @@ textarea,
   font-weight: 700;
   letter-spacing: 0.08em;
 }
+.project-card-path {
+  display: grid;
+  gap: 9px;
+  margin-bottom: 24px;
+  color: var(--secondary);
+  font-size: 12px;
+}
+.project-card {
+  height: auto;
+  flex-grow: 1;
+}
+.project-card-path li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.project-path-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--accent);
+  font-family: var(--font-code);
+  font-size: 11px;
+}
 .tech-card {
   position: relative;
   display: flex;

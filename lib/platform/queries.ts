@@ -22,6 +22,36 @@ type TagRelation = {
 };
 
 type ProjectRow = {
+  id?: string;
+  content?: string | null;
+  operating_system?: string | null;
+  hardware_requirements?: string[] | null;
+  software_requirements?: string[] | null;
+  prerequisites?: string[] | null;
+  estimated_duration?: string | null;
+  difficulty?: string | null;
+  project_learning_stages?:
+    | {
+        position: number;
+        title: string;
+        description?: string;
+        outcome: string;
+        content?: string;
+        project_stage_knowledge?:
+          | {
+              knowledge_id: string;
+              kind: "required" | "supplement" | "optional";
+              position: number;
+              knowledge: {
+                id: string;
+                title: string;
+                slug: string;
+                status: string;
+              } | null;
+            }[]
+          | null;
+      }[]
+    | null;
   owner_id?: string | null;
   slug: string;
   title: string;
@@ -32,6 +62,11 @@ type ProjectRow = {
   like_count: number | null;
   project_tags?: TagRelation[] | null;
 };
+
+const projectFields =
+  "id,owner_id,slug,title,description,author_name,github_url,view_count,like_count,operating_system,hardware_requirements,software_requirements,prerequisites,estimated_duration,difficulty,project_tags(tags(name))";
+const projectSummarySelect = `${projectFields},project_learning_stages(position,title,outcome)`;
+const projectDetailSelect = `${projectFields},content,project_learning_stages(position,title,description,outcome,content,project_stage_knowledge(knowledge_id,kind,position,knowledge(id,title,slug,status)))`;
 
 type KnowledgeRow = {
   id: string;
@@ -95,6 +130,34 @@ function relationTags(relations?: TagRelation[] | null): string[] {
 
 function mapProject(row: ProjectRow): ProjectCard {
   return {
+    id: row.id ?? "",
+    content: row.content ?? "",
+    operatingSystem: row.operating_system ?? "",
+    hardware: row.hardware_requirements ?? [],
+    software: row.software_requirements ?? [],
+    prerequisites: row.prerequisites ?? [],
+    duration: row.estimated_duration ?? "",
+    difficulty:
+      row.difficulty === "advanced" || row.difficulty === "intermediate"
+        ? row.difficulty
+        : "beginner",
+    stages: [...(row.project_learning_stages ?? [])]
+      .sort((a, b) => a.position - b.position)
+      .map((stage) => ({
+        title: stage.title,
+        description: stage.description ?? "",
+        outcome: stage.outcome,
+        content: stage.content ?? "",
+        lessons: [...(stage.project_stage_knowledge ?? [])]
+          .sort((a, b) => a.position - b.position)
+          .filter((link) => link.knowledge?.status === "published")
+          .map((link) => ({
+            knowledgeId: link.knowledge_id,
+            kind: link.kind,
+            title: link.knowledge!.title,
+            slug: link.knowledge!.slug,
+          })),
+      })),
     ownerId: row.owner_id ?? null,
     slug: row.slug,
     title: row.title,
@@ -151,9 +214,7 @@ export async function getProjects(limit?: number): Promise<ProjectCard[]> {
     const supabase = createPublicClient();
     let query = supabase
       .from("projects")
-      .select(
-        "owner_id,slug,title,description,author_name,github_url,view_count,like_count,project_tags(tags(name))",
-      )
+      .select(projectSummarySelect)
       .eq("is_published", true)
       .order("created_at", { ascending: false });
 
@@ -183,11 +244,10 @@ export const getProjectBySlug = cache(async function getProjectBySlug(
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("projects")
-    .select(
-      "owner_id,slug,title,description,author_name,github_url,view_count,like_count,project_tags(tags(name))",
-    )
+    .select(projectDetailSelect)
     .eq("slug", slug)
     .eq("is_published", true)
+    .returns<ProjectRow[]>()
     .maybeSingle();
 
   if (error || !data) {
@@ -363,9 +423,7 @@ export async function searchPlatformContent(query: string): Promise<{
   const [projectsResult, knowledgeResult, resourcesResult] = await Promise.all([
     supabase
       .from("projects")
-      .select(
-        "owner_id,slug,title,description,author_name,github_url,view_count,like_count,project_tags(tags(name))",
-      )
+      .select(projectSummarySelect)
       .eq("is_published", true)
       .or(
         includeSearchIds(
