@@ -165,6 +165,16 @@ a.tech-card:hover {
     0 0 24px #59d9f210;
   transform: translateY(-3px);
 }
+.tech-card.knowledge-card {
+  padding: 20px;
+}
+.knowledge-card .tech-tag {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+.knowledge-card-meta time {
+  font-variant-numeric: tabular-nums;
+}
 .tech-tag {
   display: inline-flex;
   max-width: 100%;

@@ -53,7 +53,7 @@ async function upsertTags(
 
   const { error: upsertError } = await supabase.from("tags").upsert(
     tags.map((name) => ({ name })),
-    { onConflict: "name", ignoreDuplicates: false },
+    { onConflict: "name", ignoreDuplicates: true },
   );
 
   if (upsertError) {

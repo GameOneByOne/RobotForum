@@ -4,6 +4,18 @@ export type TranslationParams = Record<string, string | number>;
 // Keys describe UI only. User-authored titles, Markdown, tags and comments are
 // never passed through this dictionary.
 export const en: Record<string, string> = {
+  创建者: "Author",
+  创建时间: "Created",
+  最新修改时间: "Last updated",
+  北京时间: "Beijing time (UTC+8)",
+  时间显示: "Time zone",
+  搜索知识库: "Search the knowledge base",
+  "搜索标题、简介或标签…": "Search titles, summaries or tags…",
+  "显示 {0} 篇知识库": "{0} articles",
+  "暂无匹配的知识库。": "No matching articles.",
+  "ROBOTICS KNOWLEDGE BASE": "ROBOTICS KNOWLEDGE BASE",
+  "从开发环境到机器人实践，查找需要的知识与操作方法。":
+    "Find knowledge and practical guides, from development tools to building robots.",
   项目概况: "Project overview",
   卡片简介: "Card summary",
   "简要说明要做出什么，以及适合谁。":

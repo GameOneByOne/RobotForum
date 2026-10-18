@@ -3,6 +3,7 @@ import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 
 import { ContentCard } from "@/components/content-card";
+import { KnowledgeCard } from "@/components/knowledge-card";
 import { PostCard } from "@/components/post-card";
 import { SiteHeader } from "@/components/site-header";
 import { getForumPosts } from "@/lib/forum/posts";
@@ -63,15 +64,8 @@ export default async function Home() {
         <section>
           <SectionHeader title={t("知识库")} href="/knowledge" />
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {knowledgeItems.map((item, index) => (
-              <ContentCard
-                key={item.slug}
-                index={index}
-                title={item.title}
-                description={item.summary}
-                href={`/knowledge/${encodeURIComponent(item.slug)}`}
-                tags={item.tags}
-              />
+            {knowledgeItems.map((item) => (
+              <KnowledgeCard key={item.slug} item={item} />
             ))}
           </div>
           {!knowledgeItems.length && (

@@ -83,7 +83,6 @@ export default async function EditKnowledgePage({
           initialTitle={item.title}
           initialSummary={item.summary}
           initialTags={item.tags}
-          initialDifficulty={item.difficulty}
           initialSections={sections}
         />
 

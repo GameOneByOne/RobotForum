@@ -16,6 +16,9 @@ export type ProjectCard = ProjectPlan & {
 export type KnowledgeItem = {
   id: string;
   authorId: string | null;
+  author: string;
+  createdAt: string | null;
+  updatedAt: string | null;
   slug: string;
   title: string;
   summary: string;

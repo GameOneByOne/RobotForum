@@ -3,13 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { requireCurrentUser } from "@/lib/auth/session";
+import { displayNameFromEmail, requireCurrentUser } from "@/lib/auth/session";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { parseLearningInput } from "@/lib/knowledge/learning-path";
 
 type KnowledgeRecord = {
   id: string;
+  slug: string;
 };
 
 type TagRecord = {
@@ -87,7 +88,14 @@ async function syncKnowledgeTags(
   knowledgeId: string,
   tags: string[],
 ) {
-  await supabase.from("knowledge_tags").delete().eq("knowledge_id", knowledgeId);
+  const { error: deleteError } = await supabase
+    .from("knowledge_tags")
+    .delete()
+    .eq("knowledge_id", knowledgeId);
+
+  if (deleteError) {
+    throw new Error(`标签关联失败：${deleteError.message}`);
+  }
 
   if (!tags.length) {
     return;
@@ -97,7 +105,7 @@ async function syncKnowledgeTags(
     .from("tags")
     .upsert(
       tags.map((name) => ({ name })),
-      { onConflict: "name", ignoreDuplicates: false },
+      { onConflict: "name", ignoreDuplicates: true },
     );
 
   if (upsertError) {
@@ -157,12 +165,12 @@ export async function publishKnowledge(formData: FormData): Promise<void> {
     .from("knowledge")
     .insert({
       author_id: user.id,
+      author_name: user.displayName?.trim() || displayNameFromEmail(user.email),
       slug,
       title,
       summary: summary || createSummary(content),
       content,
       type: "guide",
-      difficulty: learning.level,
       status: "published",
       view_count: 0,
       like_count: 0,
@@ -223,19 +231,17 @@ export async function saveKnowledgeUpdate(
   validateKnowledgeInput(title, content);
 
   const user = await requireCurrentUser();
-  const nextSlug = createSlug(title);
   const supabase = await createClient();
   const updateQuery = supabase
     .from("knowledge")
     .update({
-      slug: nextSlug,
+      author_name: user.displayName?.trim() || displayNameFromEmail(user.email),
       title,
       summary: summary || createSummary(content),
       content,
       status: "published",
-      difficulty: learning.level,
     })
-    .select("id");
+    .select("id,slug");
   const { data, error } = await (id
     ? updateQuery.eq("id", id)
     : updateQuery.eq("slug", slug)
@@ -255,7 +261,7 @@ export async function saveKnowledgeUpdate(
   revalidatePath("/knowledge");
 
   return {
-    slug: nextSlug,
+    slug: (data as KnowledgeRecord).slug,
   };
 }
 
