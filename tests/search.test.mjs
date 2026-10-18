@@ -25,6 +25,41 @@ function loadSource(path, mocks = {}) {
   return loaded.exports;
 }
 const helpers = loadSource("../lib/search.ts");
+
+test("homepage knowledge and projects request latest modification before limiting", async () => {
+  const { requests, mocks } = mockedClient(() => ({ data: [] }));
+  const { getProjects, getKnowledgeItems } = loadSource("../lib/platform/queries.ts", mocks);
+  await Promise.all([getProjects(3, "updated_at"), getKnowledgeItems(3, "updated_at")]);
+  assert.equal(requests.length, 2);
+  for (const request of requests) {
+    assert.equal(request.searchParams.get("limit"), "3");
+    assert.equal(request.searchParams.get("order"), "updated_at.desc,id.desc");
+  }
+  assert.equal(requests.find(r => r.pathname.endsWith('/knowledge')).searchParams.get('status'), 'eq.published');
+  assert.equal(requests.find(r => r.pathname.endsWith('/projects')).searchParams.get('is_published'), 'eq.true');
+});
+
+test("latest activity requests 30 visible events and safely links content", async () => {
+  let received;
+  const rows = [
+    { id: "event1", actor_name: "Maker", action: "commented", kind: "knowledge", title: "Linux", slug: "中文/#", occurred_at: "2026-10-18T02:00:00Z", comment_excerpt: "Why?" },
+    { id: "event2", actor_name: " ", action: "created", kind: "discussion", title: "Robot", slug: "new-post", occurred_at: "2026-10-17T02:00:00Z", comment_excerpt: null },
+  ];
+  const mocks = {
+    "@/lib/supabase/env": { hasSupabaseEnv: () => true },
+    "@/lib/supabase/public": { createPublicClient: () => ({ rpc: async (name, args) => { received = { name, args }; return { data: rows, error: null }; } }) },
+  };
+  const { getLatestActivity } = loadSource("../lib/activity/queries.ts", mocks);
+  const result = await getLatestActivity();
+  assert.deepEqual(received, { name: "get_latest_activity", args: { p_limit: 30 } });
+  assert.equal(result[0].href, "/knowledge/" + encodeURIComponent("中文/#"));
+  assert.equal(result[0].excerpt, "Why?");
+  assert.equal(result[1].actor, "游客");
+  assert.equal(result[1].href, "/posts/new-post");
+  assert.equal("excerpt" in result[1], false);
+  mocks["@/lib/supabase/public"].createPublicClient = () => ({ rpc: async () => ({ error: { message: "offline" } }) });
+  await assert.rejects(getLatestActivity(), /offline/);
+});
 const id = "11111111-1111-1111-1111-111111111111";
 
 function mockedClient(responseFor) {

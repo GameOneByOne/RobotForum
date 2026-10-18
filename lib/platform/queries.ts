@@ -211,7 +211,10 @@ function mapResource(row: ResourceRow): ResourceItem {
   };
 }
 
-export async function getProjects(limit?: number): Promise<ProjectCard[]> {
+export async function getProjects(
+  limit?: number,
+  sortBy: "created_at" | "updated_at" = "created_at",
+): Promise<ProjectCard[]> {
   if (!hasSupabaseEnv()) {
     return [];
   }
@@ -222,7 +225,8 @@ export async function getProjects(limit?: number): Promise<ProjectCard[]> {
       .from("projects")
       .select(projectSummarySelect)
       .eq("is_published", true)
-      .order("created_at", { ascending: false });
+      .order(sortBy, { ascending: false })
+      .order("id", { ascending: false });
 
     if (limit) {
       query = query.limit(limit);
@@ -265,6 +269,7 @@ export const getProjectBySlug = cache(async function getProjectBySlug(
 
 export async function getKnowledgeItems(
   limit?: number,
+  sortBy: "created_at" | "updated_at" = "created_at",
 ): Promise<KnowledgeItem[]> {
   if (!hasSupabaseEnv()) {
     return [];
@@ -278,7 +283,8 @@ export async function getKnowledgeItems(
         "id,author_id,author_name,created_at,updated_at,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
       )
       .eq("status", "published")
-      .order("created_at", { ascending: false });
+      .order(sortBy, { ascending: false })
+      .order("id", { ascending: false });
 
     if (limit) {
       query = query.limit(limit);

@@ -175,6 +175,73 @@ a.tech-card:hover {
 .knowledge-card-meta time {
   font-variant-numeric: tabular-nums;
 }
+.home-preview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.home-more-card {
+  display: flex;
+  min-height: 60px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 16px;
+  color: var(--secondary);
+  transition:
+    border-color 180ms,
+    background 180ms;
+}
+.home-more-card:hover {
+  border-color: var(--accent);
+  background: var(--raised);
+}
+.home-activity-item {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  gap: 2px 12px;
+}
+.home-activity-item time {
+  grid-column: 2;
+}
+.home-activity-dot {
+  margin-top: 8px;
+  height: 7px;
+  width: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.home-activity-comment {
+  background: #c49af1;
+}
+@media (min-width: 768px) {
+  .home-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-activity-item {
+    grid-template-columns: 8px minmax(0, 1fr) auto;
+  }
+  .home-activity-item time {
+    grid-column: 3;
+  }
+}
+@media (min-width: 1024px) {
+  .home-preview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 0.5fr);
+  }
+  .home-more-card {
+    grid-column: 4;
+    grid-row: 1;
+    align-self: center;
+    flex-direction: column;
+    height: 50%;
+    min-height: 112px;
+    text-align: center;
+  }
+}
 .tech-tag {
   display: inline-flex;
   max-width: 100%;
