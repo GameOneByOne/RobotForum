@@ -1,3 +1,4 @@
+import { ProjectLearningPath } from "@/components/project-learning-path";
 import { getTranslator } from "@/lib/i18n/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -73,6 +74,8 @@ export default async function ProjectDetailPage({
           )}
         </div>
       </section>
+
+      <ProjectLearningPath project={project} />
 
       <div className="mx-auto w-full max-w-7xl px-5 py-6">
         <CommentSection

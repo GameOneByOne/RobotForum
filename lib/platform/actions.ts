@@ -51,12 +51,10 @@ async function upsertTags(
     return [];
   }
 
-  const { error: upsertError } = await supabase
-    .from("tags")
-    .upsert(
-      tags.map((name) => ({ name })),
-      { onConflict: "name", ignoreDuplicates: false },
-    );
+  const { error: upsertError } = await supabase.from("tags").upsert(
+    tags.map((name) => ({ name })),
+    { onConflict: "name", ignoreDuplicates: false },
+  );
 
   if (upsertError) {
     throw new Error(`标签保存失败：${upsertError.message}`);
@@ -72,65 +70,6 @@ async function upsertTags(
   }
 
   return data as TagRecord[];
-}
-
-export async function publishProject(formData: FormData): Promise<void> {
-  if (!hasSupabaseEnv()) {
-    throw new Error("Supabase 环境变量未配置，暂时无法发布项目。");
-  }
-
-  const title = normalizeText(formData.get("title"));
-  const description = normalizeText(formData.get("description"));
-  const githubUrl = normalizeText(formData.get("githubUrl"));
-  const tags = parseTags(formData.get("tags"));
-
-  if (!title || !description) {
-    throw new Error("项目名称和介绍不能为空。");
-  }
-
-  const user = await requireCurrentUser();
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .insert({
-      owner_id: user.id,
-      slug: createSlug(title, "project"),
-      title,
-      description,
-      github_url: githubUrl || null,
-      author_name: displayNameFromEmail(user.email),
-      is_published: true,
-      view_count: 0,
-      like_count: 0,
-    })
-    .select("id")
-    .single();
-
-  if (error || !data) {
-    throw new Error(`发布失败：${error?.message ?? "未知错误"}`);
-  }
-
-  const tagRows = await upsertTags(supabase, tags);
-
-  if (tagRows.length) {
-    const { error: relationError } = await supabase
-      .from("project_tags")
-      .upsert(
-        tagRows.map((tag) => ({
-          project_id: data.id,
-          tag_id: tag.id,
-        })),
-        { ignoreDuplicates: true, onConflict: "project_id,tag_id" },
-      );
-
-    if (relationError) {
-      throw new Error(`标签关联失败：${relationError.message}`);
-    }
-  }
-
-  revalidatePath("/");
-  revalidatePath("/projects");
-  redirect("/projects");
 }
 
 export async function publishResource(formData: FormData): Promise<void> {
@@ -194,43 +133,6 @@ export async function publishResource(formData: FormData): Promise<void> {
   redirect("/resources");
 }
 
-export async function updateProject(formData: FormData): Promise<void> {
-  if (!hasSupabaseEnv()) {
-    throw new Error("Supabase 环境变量未配置，暂时无法更新项目。");
-  }
-
-  const slug = normalizeText(formData.get("slug"));
-  const title = normalizeText(formData.get("title"));
-  const description = normalizeText(formData.get("description"));
-  const githubUrl = normalizeText(formData.get("githubUrl"));
-
-  if (!slug || !title || !description) {
-    throw new Error("项目标识、名称和介绍不能为空。");
-  }
-
-  const user = await requireCurrentUser();
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .update({
-      title,
-      description,
-      github_url: githubUrl || null,
-    })
-    .select("slug")
-    .eq("slug", slug)
-    .eq("owner_id", user.id)
-    .maybeSingle();
-
-  if (error || !data) {
-    throw new Error(`更新失败：${error?.message ?? "只能更新自己发布的项目。"}`);
-  }
-
-  revalidatePath("/");
-  revalidatePath("/projects");
-  redirect("/projects");
-}
-
 export async function updateResource(formData: FormData): Promise<void> {
   if (!hasSupabaseEnv()) {
     throw new Error("Supabase 环境变量未配置，暂时无法更新资源。");
@@ -262,7 +164,9 @@ export async function updateResource(formData: FormData): Promise<void> {
     .maybeSingle();
 
   if (error || !data) {
-    throw new Error(`更新失败：${error?.message ?? "只能更新自己发布的资源。"}`);
+    throw new Error(
+      `更新失败：${error?.message ?? "只能更新自己发布的资源。"}`,
+    );
   }
 
   revalidatePath("/");

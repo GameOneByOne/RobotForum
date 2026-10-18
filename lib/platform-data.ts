@@ -1,4 +1,7 @@
-export type ProjectCard = {
+import type { ProjectPlan } from "@/lib/projects/plan";
+
+export type ProjectCard = ProjectPlan & {
+  id: string;
   ownerId: string | null;
   slug: string;
   title: string;
