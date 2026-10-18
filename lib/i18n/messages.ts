@@ -4,6 +4,23 @@ export type TranslationParams = Record<string, string | number>;
 // Keys describe UI only. User-authored titles, Markdown, tags and comments are
 // never passed through this dictionary.
 export const en: Record<string, string> = {
+  "查看全部{0}": "View all: {0}",
+  最新动态: "Latest activity",
+  "最近 30 条 · 北京时间": "Latest 30 · Beijing time (UTC+8)",
+  "暂无动态，新的发布、修改和评论会出现在这里。":
+    "No activity yet. New posts, edits and comments will appear here.",
+  新增了知识库文章: "created an article",
+  更新了知识库文章: "updated an article",
+  评论了知识库文章: "commented on an article",
+  新增了项目: "created a project",
+  更新了项目: "updated a project",
+  评论了项目: "commented on a project",
+  新增了资源: "shared a resource",
+  更新了资源: "updated a resource",
+  评论了资源: "commented on a resource",
+  发布了讨论: "started a discussion",
+  更新了讨论: "updated a discussion",
+  回复了讨论: "replied to a discussion",
   创建者: "Author",
   创建时间: "Created",
   最新修改时间: "Last updated",

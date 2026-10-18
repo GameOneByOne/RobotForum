@@ -94,6 +94,8 @@ export async function publishComment(formData: FormData): Promise<void> {
     throw new Error(`评论失败：${error.message}`);
   }
 
+  revalidatePath("/");
+
   if (targetType === "post") {
     const path = `/posts/${encodeURIComponent(targetSlug)}`;
     revalidatePath(path);
