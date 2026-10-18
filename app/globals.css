@@ -180,6 +180,10 @@ a.tech-card:hover {
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
+.home-preview-grid > :only-child {
+  grid-column: 1 / -1;
+  width: 100%;
+}
 .home-more-card {
   display: flex;
   min-height: 60px;
@@ -230,15 +234,19 @@ a.tech-card:hover {
 }
 @media (min-width: 1024px) {
   .home-preview-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 0.5fr);
+    display: flex;
+    align-items: stretch;
+  }
+  .home-preview-grid > .tech-card {
+    flex: 0 0 calc((100% - 48px) / 3.25);
+    min-width: 0;
   }
   .home-more-card {
-    grid-column: 4;
-    grid-row: 1;
-    align-self: center;
+    flex: 0 0 calc((100% - 48px) / 13);
+    min-width: 0;
+    align-self: stretch;
     flex-direction: column;
-    height: 50%;
-    min-height: 112px;
+    padding: 12px 8px;
     text-align: center;
   }
 }
