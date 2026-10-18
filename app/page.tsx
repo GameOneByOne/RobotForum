@@ -101,7 +101,9 @@ export default async function Home() {
             {!knowledgeItems.length && (
               <EmptyState label={t("数据库中暂无知识库数据。")} />
             )}
-            <ViewAllCard href="/knowledge" section={t("知识库")} />
+            {!!knowledgeItems.length && (
+              <ViewAllCard href="/knowledge" section={t("知识库")} />
+            )}
           </div>
         </section>
         <section>
@@ -113,7 +115,9 @@ export default async function Home() {
             {!projects.length && (
               <EmptyState label={t("数据库中暂无项目数据。")} />
             )}
-            <ViewAllCard href="/projects" section={t("项目展示")} />
+            {!!projects.length && (
+              <ViewAllCard href="/projects" section={t("项目展示")} />
+            )}
           </div>
         </section>
         <section>
@@ -132,7 +136,9 @@ export default async function Home() {
             {!resources.length && (
               <EmptyState label={t("数据库中暂无资源数据。")} />
             )}
-            <ViewAllCard href="/resources" section={t("资源分享")} />
+            {!!resources.length && (
+              <ViewAllCard href="/resources" section={t("资源分享")} />
+            )}
           </div>
         </section>
         <section aria-labelledby="latest-activity-heading">
