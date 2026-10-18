@@ -71,6 +71,9 @@ const projectDetailSelect = `${projectFields},content,project_learning_stages(po
 type KnowledgeRow = {
   id: string;
   author_id?: string | null;
+  author_name?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
   slug: string;
   title: string;
   summary: string | null;
@@ -177,6 +180,9 @@ function mapKnowledge(row: KnowledgeRow): KnowledgeItem {
   return {
     id: row.id,
     authorId: row.author_id ?? null,
+    author: row.author_name?.trim() || "Member",
+    createdAt: row.created_at ?? null,
+    updatedAt: row.updated_at ?? null,
     slug: row.slug,
     title: row.title,
     summary: row.summary ?? "",
@@ -269,7 +275,7 @@ export async function getKnowledgeItems(
     let query = supabase
       .from("knowledge")
       .select(
-        "id,author_id,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+        "id,author_id,author_name,created_at,updated_at,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
       )
       .eq("status", "published")
       .order("created_at", { ascending: false });
@@ -316,7 +322,7 @@ export const getKnowledgeItemBySlug = cache(
       const { data, error } = await supabase
         .from("knowledge")
         .select(
-          "id,author_id,slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+          "id,author_id,author_name,created_at,updated_at,slug,title,summary,content,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
         )
         .in("slug", slugCandidates)
         .eq("status", "published")
@@ -436,12 +442,12 @@ export async function searchPlatformContent(query: string): Promise<{
     supabase
       .from("knowledge")
       .select(
-        "id,author_id,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
+        "id,author_id,author_name,created_at,updated_at,slug,title,summary,type,difficulty,view_count,like_count,knowledge_tags(tags(name))",
       )
       .eq("status", "published")
       .or(
         includeSearchIds(
-          textSearchFilter(["title", "summary", "content"], keyword),
+          textSearchFilter(["title", "summary", "content", "author_name"], keyword),
           (tagResults[1].data ?? []).map((row) => row.knowledge_id),
         ),
       )

@@ -1,6 +1,7 @@
 import { getTranslator } from "@/lib/i18n/server";
 import type { ReactNode } from "react";
 import { ContentCard } from "@/components/content-card";
+import { KnowledgeCard } from "@/components/knowledge-card";
 import { PostCard } from "@/components/post-card";
 import { SearchForm } from "@/components/search-form";
 import { SiteHeader } from "@/components/site-header";
@@ -113,13 +114,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             )}
             <ResultSection title={t("知识库")} count={results.knowledge.length}>
               {results.knowledge.map((item) => (
-                <ContentCard
-                  key={item.slug}
-                  title={item.title}
-                  description={item.summary}
-                  tags={item.tags}
-                  href={`/knowledge/${encodeURIComponent(item.slug)}`}
-                />
+                <KnowledgeCard key={item.slug} item={item} />
               ))}
             </ResultSection>
             <ResultSection title={t("项目")} count={results.projects.length}>

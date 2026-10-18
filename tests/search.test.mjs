@@ -89,6 +89,9 @@ test("tag-only and knowledge-body matches survive search with published filters"
           {
             id,
             slug: "body-match",
+            author_name: "  Robot Maker  ",
+            created_at: "2026-10-01T00:00:00Z",
+            updated_at: "2026-10-18T02:30:00Z",
             title: "运动学",
             summary: "概述",
             type: "guide",
@@ -105,10 +108,14 @@ test("tag-only and knowledge-body matches survive search with published filters"
   );
   const result = await searchPlatformContent("特殊标签");
   assert.equal(result.knowledge[0].slug, "body-match");
+  assert.equal(result.knowledge[0].author, "Robot Maker");
+  assert.equal(result.knowledge[0].createdAt, "2026-10-01T00:00:00Z");
+  assert.equal(result.knowledge[0].updatedAt, "2026-10-18T02:30:00Z");
   const request = requests.find((url) => url.pathname.endsWith("/knowledge"));
   assert.equal(request.searchParams.get("status"), "eq.published");
   assert.equal(request.searchParams.get("limit"), "20");
   assert.ok(request.searchParams.get("or").includes("content.ilike."));
+  assert.ok(request.searchParams.get("or").includes("author_name.ilike."));
   assert.ok(request.searchParams.get("or").includes(`id.in.(${id})`));
 });
 

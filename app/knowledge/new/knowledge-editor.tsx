@@ -13,13 +13,7 @@ import { useMemo, useRef, useState } from "react";
 import { MarkdownContent } from "@/components/markdown-content";
 import { getTagStyle } from "@/lib/tag-colors";
 import type { KnowledgeSection } from "@/lib/knowledge/sections";
-import {
-  getLearningMetadata,
-  isLearningMetadataTag,
-  learningLevels,
-  withLearningMetadata,
-  type LearningLevel,
-} from "@/lib/knowledge/learning-path";
+import { isLearningMetadataTag } from "@/lib/knowledge/learning-path";
 
 type EditableKnowledgeSection = Omit<KnowledgeSection, "level">;
 
@@ -29,7 +23,6 @@ type KnowledgeEditorProps = {
   initialTitle?: string;
   initialSummary?: string;
   initialTags?: string[];
-  initialDifficulty?: string;
   initialSections?: KnowledgeSection[];
 };
 
@@ -342,7 +335,6 @@ export function KnowledgeEditor({
   initialTitle,
   initialSummary = "",
   initialTags = [],
-  initialDifficulty,
   initialSections,
 }: KnowledgeEditorProps) {
   const { t } = useI18n();
@@ -351,13 +343,6 @@ export function KnowledgeEditor({
     initialTitle ?? t("未命名知识库"),
   );
   const [summary, setSummary] = useState(initialSummary);
-  const initialLearning = getLearningMetadata({
-    tags: initialTags,
-    difficulty: initialDifficulty,
-  });
-  const [difficulty, setDifficulty] = useState<LearningLevel>(
-    initialLearning.level,
-  );
   const [tags, setTags] = useState<string[]>(
     initialTags.filter((tag) => !isLearningMetadataTag(tag)),
   );
@@ -929,7 +914,7 @@ export function KnowledgeEditor({
       <input
         type="hidden"
         name="tags"
-        value={JSON.stringify(withLearningMetadata(tags, difficulty))}
+        value={JSON.stringify(tags)}
       />
 
       <section className="space-y-4 rounded-xl border border-line bg-panel p-5">
@@ -954,26 +939,6 @@ export function KnowledgeEditor({
             placeholder={t("用一两句话说明这篇知识库适合解决什么问题。")}
           />
         </label>
-
-        <div>
-          <label className="block space-y-2">
-            <span className="text-sm font-semibold">{t("学习等级")}</span>
-            <select
-              name="difficulty"
-              value={difficulty}
-              onChange={(event) =>
-                setDifficulty(event.target.value as LearningLevel)
-              }
-              className="w-full rounded-md border border-line bg-panel px-3 py-2 text-sm"
-            >
-              {learningLevels.map((level) => (
-                <option key={level.value} value={level.value}>
-                  {t(level.label)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
 
         <div className="space-y-2">
           <span className="text-sm font-semibold">{t("知识库标签")}</span>

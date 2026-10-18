@@ -21,14 +21,12 @@ export default async function KnowledgePage() {
       <section className="page-hero">
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-start justify-between gap-4 px-5 py-14 sm:py-20">
           <div>
-            <p className="eyebrow">{t("ROBOTICS LEARNING PATH")}</p>
+            <p className="eyebrow">{t("ROBOTICS KNOWLEDGE BASE")}</p>
             <h1 className="mt-5 text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
               {t("工程知识库")}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-muted">
-              {t(
-                "从开发基础到完整机器人项目，沿着初级、中级、高级三个阶段逐步学习。",
-              )}
+              {t("从开发环境到机器人实践，查找需要的知识与操作方法。")}
             </p>
           </div>
           {user ? (

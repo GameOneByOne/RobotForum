@@ -18,7 +18,7 @@ import { readingOutline } from "@/lib/markdown/outline";
 import type { KnowledgeSection } from "@/lib/knowledge/sections";
 
 type KnowledgeDetailViewProps = {
-  editHref: string;
+  editHref?: string;
   sections: KnowledgeSection[];
 };
 
@@ -254,6 +254,7 @@ export function KnowledgeDetailView({
   }
 
   function openContextMenu(event: MouseEvent<HTMLButtonElement>) {
+    if (!editHref) return;
     event.preventDefault();
     event.stopPropagation();
     setContextMenu({
@@ -433,7 +434,7 @@ export function KnowledgeDetailView({
         </div>
       </article>
 
-      {contextMenu && (
+      {contextMenu && editHref && (
         <div
           className="fixed z-50 w-44 overflow-hidden rounded-md border border-line bg-panel py-1 text-sm shadow-lg"
           style={{ left: contextMenu.x, top: contextMenu.y }}

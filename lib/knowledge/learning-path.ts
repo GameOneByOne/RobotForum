@@ -25,7 +25,7 @@ type LearningItem = { tags: string[]; difficulty?: string };
 
 export function isLearningMetadataTag(tag: string) {
   return (
-    learningLevels.some((level) => level.label === tag) ||
+    learningLevels.some((level) => level.label === tag.trim()) ||
     isLearningOrderTag(tag)
   );
 }
@@ -53,13 +53,6 @@ export function getLearningMetadata(item: LearningItem): {
   };
 }
 
-export function withLearningMetadata(tags: string[], level: LearningLevel) {
-  const label = learningLevels.find((entry) => entry.value === level)!.label;
-  return [
-    ...new Set([...tags.filter((tag) => !isLearningMetadataTag(tag)), label]),
-  ];
-}
-
 export function compareLearningOrder<
   T extends LearningItem & { title: string; slug: string },
 >(a: T, b: T) {
@@ -72,13 +65,9 @@ export function compareLearningOrder<
   );
 }
 
-export function parseLearningInput(formData: FormData, tags: string[]) {
-  const fallback = getLearningMetadata({ tags });
-  const value = formData.get("difficulty");
-  const level =
-    learningLevels.find((entry) => entry.value === value)?.value ??
-    fallback.level;
-  // Keep legacy ordering readable, but never create order tags on new saves,
-  // including submissions from editor tabs opened before this update.
-  return { level, tags: withLearningMetadata(tags, level) };
+export function parseLearningInput(_formData: FormData, tags: string[]) {
+  // Old editor tabs may still submit difficulty, learningOrder, and their tags.
+  // Knowledge articles now keep only topic tags; legacy metadata remains readable
+  // above solely to preserve a stable order for existing articles.
+  return { tags: tags.filter((tag) => !isLearningMetadataTag(tag)) };
 }
